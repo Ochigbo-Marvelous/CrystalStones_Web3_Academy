@@ -3,6 +3,27 @@ const pool = require("../config/db");
 const ApiError = require("../utils/ApiError");
 const securityLogger = require("../utils/securityLogger");
 
+const sanitizeAvatar = (avatar) => {
+  if (!avatar) return null;
+  if (avatar.startsWith("/uploads/")) {
+    if (!/^\/uploads\/[\w.-]+$/.test(avatar)) {
+      throw new ApiError(400, "Invalid avatar path");
+    }
+    return avatar;
+  }
+
+  try {
+    const parsed = new URL(avatar);
+    if (parsed.protocol !== "https:") {
+      throw new ApiError(400, "Avatar must use https");
+    }
+    return parsed.toString();
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(400, "Invalid avatar URL");
+  }
+};
+
 const updateProfile = async (userId, data) => {
   const fields = [];
   const values = [];
@@ -14,7 +35,7 @@ const updateProfile = async (userId, data) => {
 
   if (data.avatar !== undefined) {
     fields.push("avatar = ?");
-    values.push(data.avatar || null);
+    values.push(sanitizeAvatar(data.avatar));
   }
 
   if (fields.length === 0) {
@@ -22,17 +43,15 @@ const updateProfile = async (userId, data) => {
   }
 
   values.push(userId);
-
   await pool.query(`UPDATE users SET ${fields.join(", ")} WHERE id = ?`, values);
 
   const [users] = await pool.query(
-    `SELECT id, full_name, username, email, avatar, role, current_rank, created_at 
+    `SELECT id, full_name, username, email, avatar, role, current_rank, created_at
      FROM users WHERE id = ?`,
     [userId]
   );
 
   await securityLogger("PROFILE_UPDATED", { userId });
-
   return users[0];
 };
 
@@ -43,6 +62,10 @@ const changePassword = async (userId, currentPassword, newPassword) => {
     throw new ApiError(404, "User not found");
   }
 
+  if (!users[0].password) {
+    throw new ApiError(400, "This account uses GitHub login");
+  }
+
   const isMatch = await bcrypt.compare(currentPassword, users[0].password);
   if (!isMatch) {
     await securityLogger("PASSWORD_CHANGE_FAILED", { userId });
@@ -51,7 +74,6 @@ const changePassword = async (userId, currentPassword, newPassword) => {
 
   const hashedPassword = await bcrypt.hash(newPassword, 12);
   await pool.query("UPDATE users SET password = ? WHERE id = ?", [hashedPassword, userId]);
-
   await securityLogger("PASSWORD_CHANGED", { userId });
 
   return { message: "Password updated successfully" };
@@ -59,8 +81,8 @@ const changePassword = async (userId, currentPassword, newPassword) => {
 
 const getCertificates = async (userId) => {
   const [certificates] = await pool.query(
-    `SELECT c.id, c.certificate_code, c.issued_at, 
-            co.title as course_title, co.slug as course_slug
+    `SELECT c.id, c.certificate_code, c.issued_at,
+            co.title AS course_title, co.slug AS course_slug
      FROM certificates c
      JOIN courses co ON c.course_id = co.id
      WHERE c.user_id = ?

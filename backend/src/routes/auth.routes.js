@@ -8,8 +8,8 @@ const router = express.Router();
 
 router.post("/signup", validate(signupSchema), authController.signup);
 router.post("/login", validate(loginSchema), authController.login);
+router.post("/logout", protect, authController.logout);
 router.get("/me", protect, authController.getMe);
-
 router.get("/github", authController.githubStart);
 router.get("/github/callback", authController.githubCallback);
 router.get("/google", authController.googleStart);

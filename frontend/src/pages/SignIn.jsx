@@ -82,7 +82,7 @@ export default function SignIn() {
           <div className="su-brand su-brand-login">
             <img src={logo} alt="" />
             <div className="su-brand-text">
-              <strong>CRYSTAL STONES WEB3</strong>
+              <strong>CRYSTAL WEB3</strong>
               <span>— ACADEMY —</span>
             </div>
           </div>

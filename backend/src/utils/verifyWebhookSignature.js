@@ -1,40 +1,41 @@
 const crypto = require("crypto");
 const ApiError = require("./ApiError");
 
-/**
- * Verify HMAC SHA-256 signature over the raw request body.
- * Expected header format: hex digest of HMAC(secret, rawBody)
- */
-const verifyWebhookSignature = (req, signatureHeader = "x-signature") => {
-  const signature = req.headers[signatureHeader];
-  const secret = process.env.PAYNOVAX_WEBHOOK_SECRET;
+const sortKeys = (value) => {
+  if (Array.isArray(value)) return value.map(sortKeys);
+  if (value && typeof value === "object") {
+    return Object.keys(value)
+      .sort()
+      .reduce((acc, key) => {
+        acc[key] = sortKeys(value[key]);
+        return acc;
+      }, {});
+  }
+  return value;
+};
+
+const verifyNowPaymentsSignature = (payload, signature) => {
+  const secret = process.env.NOWPAYMENTS_IPN_SECRET;
 
   if (!signature) {
-    throw new ApiError(401, "Missing webhook signature");
+    throw new ApiError(401, "Missing NOWPayments signature");
   }
-
   if (!secret) {
-    throw new ApiError(500, "Webhook secret not configured");
+    throw new ApiError(500, "NOWPayments IPN secret is not configured");
+  }
+  if (!payload || typeof payload !== "object") {
+    throw new ApiError(400, "Invalid webhook payload");
   }
 
-  if (!req.rawBody) {
-    throw new ApiError(400, "Raw body unavailable for signature verification");
-  }
+  const signed = JSON.stringify(sortKeys(payload));
+  const expected = crypto.createHmac("sha512", secret).update(signed).digest("hex");
 
-  const expected = crypto
-    .createHmac("sha256", secret)
-    .update(req.rawBody)
-    .digest("hex");
+  const received = Buffer.from(String(signature), "utf8");
+  const computed = Buffer.from(expected, "utf8");
 
-  const sigBuffer = Buffer.from(signature);
-  const expectedBuffer = Buffer.from(expected);
-
-  if (
-    sigBuffer.length !== expectedBuffer.length ||
-    !crypto.timingSafeEqual(sigBuffer, expectedBuffer)
-  ) {
-    throw new ApiError(401, "Invalid webhook signature");
+  if (received.length !== computed.length || !crypto.timingSafeEqual(received, computed)) {
+    throw new ApiError(401, "Invalid NOWPayments signature");
   }
 };
 
-module.exports = verifyWebhookSignature;
+module.exports = verifyNowPaymentsSignature;

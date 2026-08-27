@@ -2,24 +2,22 @@ const jwt = require("jsonwebtoken");
 const ApiError = require("../utils/ApiError");
 const asyncHandler = require("../utils/asyncHandler");
 const pool = require("../config/db");
+const { isBlocked } = require("../utils/tokenBlocklist");
 
 const protect = asyncHandler(async (req, res, next) => {
-  let token;
-
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer")
-  ) {
-    token = req.headers.authorization.split(" ")[1];
-  }
+  const header = req.headers.authorization;
+  const token = header?.startsWith("Bearer ") ? header.split(" ")[1] : null;
 
   if (!token) {
     throw new ApiError(401, "Not authorized, no token provided");
   }
 
+  if (await isBlocked(token)) {
+    throw new ApiError(401, "Not authorized, token revoked");
+  }
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
     const [rows] = await pool.query(
       "SELECT id, full_name, username, email, avatar, role, created_at FROM users WHERE id = ?",
       [decoded.id]
@@ -30,8 +28,10 @@ const protect = asyncHandler(async (req, res, next) => {
     }
 
     req.user = rows[0];
+    req.token = token;
     next();
   } catch (error) {
+    if (error instanceof ApiError) throw error;
     throw new ApiError(401, "Not authorized, token failed");
   }
 });

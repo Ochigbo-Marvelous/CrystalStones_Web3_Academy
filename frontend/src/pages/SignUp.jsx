@@ -120,7 +120,7 @@ export default function SignUp() {
         localStorage.setItem("pendingAvatarName", avatarFile.name);
       }
 
-      window.location.href = "/signin";
+      window.location.href = "/dashboard";
     } catch (err) {
       setError(err.message || "Signup failed. Is the backend running?");
     } finally {
@@ -135,7 +135,7 @@ export default function SignUp() {
           <div className="su-brand">
             <img src={logo} alt="" />
             <div className="su-brand-text">
-              <strong>CRYSTAL STONES WEB3</strong>
+              <strong>CRYSTAL WEB3</strong>
               <span>— ACADEMY —</span>
               <p className="su-tag">SHARPEN YOUR MIND. SHAPE YOUR FUTURE.</p>
             </div>
@@ -217,22 +217,22 @@ export default function SignUp() {
 
           <div className="su-social">
             <button
-                type="button"
-                className="su-oauth"
-                onClick={() => {
-                    window.location.href = `${API}/api/auth/google`;
-                }}
-                >
-                <GoogleIcon /> Continue with Google
-                </button>
-                <button
-                type="button"
-                className="su-oauth"
-                onClick={() => {
-                    window.location.href = `${API}/api/auth/github`;
-                }}
-                >
-                <GitHubIcon /> Continue with GitHub
+              type="button"
+              className="su-oauth"
+              onClick={() => {
+                window.location.href = `${API}/api/auth/google`;
+              }}
+            >
+              <GoogleIcon /> Continue with Google
+            </button>
+            <button
+              type="button"
+              className="su-oauth"
+              onClick={() => {
+                window.location.href = `${API}/api/auth/github`;
+              }}
+            >
+              <GitHubIcon /> Continue with GitHub
             </button>
           </div>
 

@@ -2,15 +2,29 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import crystal from "../assets/brand/hero-crystal.png";
+import mentorCrystal from "../assets/brand/crystal-hero.png";
+import iconBook from "../assets/brand/icon-book.png";
+import iconClock from "../assets/brand/icon-clock.png";
+import iconCert from "../assets/brand/icon-cert.png";
+import { rankImage } from "../lib/rankAssets";
 import "../styles/dashboard.css";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5001";
+const MENTOR_KEY = "mentor_thread";
 
 const formatTime = (mins = 0) => {
   const n = Number(mins) || 0;
   const h = Math.floor(n / 60);
   const m = n % 60;
   return h ? `${h}h ${m}m` : `${m}m`;
+};
+
+const readThread = () => {
+  try {
+    return JSON.parse(localStorage.getItem(MENTOR_KEY) || "[]");
+  } catch {
+    return [];
+  }
 };
 
 function Skeleton() {
@@ -41,6 +55,9 @@ export default function Dashboard() {
   const [query, setQuery] = useState("");
   const [level, setLevel] = useState("all");
   const [error, setError] = useState("");
+  const [mentorInput, setMentorInput] = useState("");
+  const [mentorBusy, setMentorBusy] = useState(false);
+  const [thread, setThread] = useState(readThread);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -59,6 +76,9 @@ export default function Dashboard() {
         if (!dash.success) throw new Error(dash.message || "Dashboard failed");
         setData(dash.data);
         setCourses(list.data || []);
+        if (dash.data?.user) {
+          localStorage.setItem("user", JSON.stringify(dash.data.user));
+        }
       })
       .catch((err) => {
         if (String(err.message).toLowerCase().includes("not authorized")) {
@@ -86,12 +106,51 @@ export default function Dashboard() {
     navigate(`/courses/${course.slug || course.id}`);
   };
 
+  const saveThread = (next) => {
+    const clipped = next.slice(-40);
+    localStorage.setItem(MENTOR_KEY, JSON.stringify(clipped));
+    setThread(clipped);
+  };
+
+  const askMentor = async (event) => {
+    event.preventDefault();
+    const question = mentorInput.trim();
+    if (!question || mentorBusy) return;
+
+    const token = localStorage.getItem("token");
+    setMentorBusy(true);
+
+    const pending = [...thread, { role: "user", text: question, at: Date.now() }];
+    saveThread(pending);
+    setMentorInput("");
+
+    try {
+      const res = await fetch(`${API}/api/mentor`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ question }),
+      });
+      const json = await res.json();
+      const answer = json?.data?.answer || json.message || "I could not find an answer yet.";
+      saveThread([...pending, { role: "mentor", text: answer, at: Date.now() }]);
+    } catch {
+      saveThread([...pending, { role: "mentor", text: "Mentor is unavailable right now.", at: Date.now() }]);
+    } finally {
+      setMentorBusy(false);
+    }
+  };
+
   if (!data && !error) return <Skeleton />;
 
   const user = data?.user || {};
   const stats = data?.stats || {};
   const inProgress = data?.in_progress || [];
+  const rank = data?.rank_progress || {};
   const firstName = (user.full_name || user.username || "Learner").split(" ")[0];
+  const progress = Math.round(stats.overall_progress || 0);
 
   return (
     <div className="db">
@@ -137,46 +196,154 @@ export default function Dashboard() {
       ) : null}
 
       <section className="db-stats">
-        <article><small>Courses Enrolled</small><b>{stats.total_courses || 0}</b></article>
-        <article><small>Completion %</small><b>{Math.round(stats.overall_progress || 0)}%</b></article>
-        <article><small>Total Study Time</small><b>{formatTime(stats.total_study_minutes)}</b></article>
-        <article><small>Current Rank</small><b>{user.current_rank || "Novice"}</b></article>
-        <article><small>Certificates</small><b>{stats.certificates_earned || 0}</b></article>
+        <article>
+          <img src={iconBook} alt="" />
+          <div>
+            <small>Courses Enrolled</small>
+            <b>{stats.total_courses || 0}</b>
+            <em>Active journeys</em>
+          </div>
+        </article>
+
+        <article>
+          <span className="db-ring">
+            <svg viewBox="0 0 36 36">
+              <path d="M18 2.5a15.5 15.5 0 1 1 0 31 15.5 15.5 0 1 1 0-31" />
+              <path
+                style={{ strokeDasharray: `${progress}, 100` }}
+                d="M18 2.5a15.5 15.5 0 1 1 0 31 15.5 15.5 0 1 1 0-31"
+              />
+            </svg>
+          </span>
+          <div>
+            <small>Completion %</small>
+            <b>{progress}%</b>
+            <em>Overall progress</em>
+          </div>
+        </article>
+
+        <article>
+          <img src={iconClock} alt="" />
+          <div>
+            <small>Total Study Time</small>
+            <b>{formatTime(stats.total_study_minutes)}</b>
+            <em>Keep going!</em>
+          </div>
+        </article>
+
+        <article>
+          <img src={rankImage(user.current_rank)} alt="" />
+          <div>
+            <small>Current Rank</small>
+            <b>{user.current_rank || "Novice"}</b>
+            <em>Level {rank.level || 1}</em>
+          </div>
+        </article>
+
+        <article>
+          <img src={iconCert} alt="" />
+          <div>
+            <small>Certificates</small>
+            <b>{stats.certificates_earned || 0}</b>
+            <em>Earned</em>
+          </div>
+        </article>
       </section>
 
       <section className="db-main">
         <div className="db-card">
-          <div className="db-card-head"><h2>In Progress</h2></div>
+          <div className="db-card-head">
+            <h2>In Progress</h2>
+            <button className="db-link" type="button" onClick={() => navigate("/courses")}>
+              View All
+            </button>
+          </div>
           {inProgress.length === 0 ? (
             <p className="db-empty">No course in progress yet. Start with a Basic course below.</p>
           ) : (
-            inProgress.map((course) => (
-              <div className="db-row" key={course.id || course.course_id}>
-                <div>
-                  <b>{course.title}</b>
-                  <div className="db-empty">{course.level}</div>
+            inProgress.map((course) => {
+              const pct = Math.round(course.progress_percent || 0);
+              return (
+                <div className="db-progress-row" key={course.id || course.course_id}>
+                  <img src={course.thumbnail || crystal} alt="" />
+                  <div>
+                    <b>{course.title}</b>
+                    <small>{course.level === "beginner" ? "Basic" : course.level}</small>
+                  </div>
+                  <div className="db-progress-meta">
+                    <div className="db-bar">
+                      <span style={{ width: `${pct}%` }} />
+                    </div>
+                    <em>{pct}% Complete</em>
+                  </div>
+                  <button
+                    className="db-btn slim"
+                    type="button"
+                    onClick={() => navigate(`/courses/${course.slug || course.course_id}`)}
+                  >
+                    Continue
+                  </button>
                 </div>
-                <div className="db-bar">
-                  <span style={{ width: `${Math.round(course.progress_percent || 0)}%` }} />
-                </div>
-                <span>{Math.round(course.progress_percent || 0)}%</span>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
-        <div className="db-card">
-          <div className="db-card-head">
-            <h2>Crystal Mentor</h2>
-            <small>Online</small>
+        <div className="db-side">
+          <div className="db-card db-mentor-card">
+            <div className="db-card-head">
+              <h2>Crystal Mentor</h2>
+              <button className="db-link" type="button" onClick={() => navigate("/mentor")}>
+                Open full chat
+              </button>
+            </div>
+            <div className="db-mentor-box">
+              <img src={mentorCrystal} alt="" />
+              <p>Hello {firstName}! Ask about Crystal Stones, a lesson, or your next path.</p>
+            </div>
+            <div className="db-chat">
+              {thread.length === 0 ? (
+                <p className="db-chat-empty">Your conversation will appear here.</p>
+              ) : (
+                thread.slice(-8).map((item) => (
+                  <div key={`${item.role}-${item.at}`} className={`db-bubble ${item.role}`}>
+                    {item.text}
+                  </div>
+                ))
+              )}
+            </div>
+            <form className="db-mentor-form" onSubmit={askMentor}>
+              <input
+                value={mentorInput}
+                onChange={(e) => setMentorInput(e.target.value)}
+                placeholder="Ask me anything..."
+              />
+              <button type="submit" disabled={mentorBusy}>
+                {mentorBusy ? "..." : "➤"}
+              </button>
+            </form>
           </div>
-          <p className="db-mentor">
-            Hello {firstName}. Ask me about Crystal Stones, courses, or your next lesson.
-          </p>
-          <button className="db-btn" onClick={() => navigate("/mentor")}>Open Mentor</button>
-          <div style={{ marginTop: 18 }}>
-            <small className="db-empty">Rank</small>
-            <h2>{user.current_rank || "Novice"}</h2>
+
+          <div className="db-card db-rank-card">
+            <div className="db-card-head">
+              <h2>Rank Progress</h2>
+              <small>Level {rank.level || 1}</small>
+            </div>
+            <div className="db-rankbox">
+              <div>
+                <b>{rank.rank || user.current_rank || "Novice"}</b>
+                <small>
+                  {rank.xp_into || 0} / {rank.xp_target || 100} XP
+                </small>
+              </div>
+              <img src={rankImage(rank.rank || user.current_rank)} alt="" />
+            </div>
+            <div className="db-bar wide">
+              <span style={{ width: `${rank.percent || 0}%` }} />
+            </div>
+            <p className="db-rank-note">
+              {rank.remaining || 0} XP until {rank.next_rank || "next rank"}
+            </p>
           </div>
         </div>
       </section>

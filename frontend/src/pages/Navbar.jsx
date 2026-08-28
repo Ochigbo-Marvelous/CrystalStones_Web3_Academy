@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import logo from "../assets/brand/logo-hex.png";
+import { rankImage } from "../lib/rankAssets";
 
 function IconHome() {
   return (
@@ -52,7 +53,7 @@ export default function Navbar({ user }) {
   try {
     stored = JSON.parse(localStorage.getItem("user") || "null");
   } catch {
-    stored = null;
+    // ignore invalid localStorage
   }
 
   const name =
@@ -109,7 +110,7 @@ export default function Navbar({ user }) {
         </div>
         {name ? <b className="db-username">{name}</b> : null}
         <div className="db-rank">
-          <img src={logo} alt="" />
+          <img src={rankImage(rank)} alt="" />
           <span>{rank}</span>
         </div>
       </div>

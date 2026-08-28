@@ -51,9 +51,22 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+const emailLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 8,
+  message: {
+    success: false,
+    message: "Too many email requests. Try again later.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 app.use("/api", apiLimiter);
 app.use("/api/auth/login", authLimiter);
 app.use("/api/auth/signup", authLimiter);
+app.use("/api/auth/email/send-code", emailLimiter);
+app.use("/api/auth/password/forgot", emailLimiter);
 
 app.use(cookieParser());
 app.use(

@@ -50,14 +50,20 @@ export default function SignUp() {
   const [form, setForm] = useState({
     fullName: "",
     email: "",
+    code: "",
     username: "",
     password: "",
     confirm: "",
   });
+  const [emailTicket, setEmailTicket] = useState("");
+  const [cooldown, setCooldown] = useState(0);
   const [avatar, setAvatar] = useState(avatarDefault);
   const [avatarFile, setAvatarFile] = useState(null);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sendingCode, setSendingCode] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
   const rules = useMemo(() => {
     const p = form.password;
@@ -74,10 +80,28 @@ export default function SignUp() {
     form.fullName.trim() &&
     form.email.trim() &&
     form.username.trim() &&
+    emailTicket &&
     rules.every((r) => r.ok) &&
     !loading;
 
-  const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+  const set = (key) => (e) => {
+    const value = e.target.value;
+    setForm((prev) => ({ ...prev, [key]: value }));
+    if (key === "email") setEmailTicket("");
+  };
+
+  const startCooldown = () => {
+    setCooldown(60);
+    const timer = window.setInterval(() => {
+      setCooldown((current) => {
+        if (current <= 1) {
+          window.clearInterval(timer);
+          return 0;
+        }
+        return current - 1;
+      });
+    }, 1000);
+  };
 
   const onAvatar = (e) => {
     const file = e.target.files?.[0];
@@ -88,6 +112,57 @@ export default function SignUp() {
     }
     setAvatarFile(file);
     setAvatar(URL.createObjectURL(file));
+  };
+
+  const sendCode = async () => {
+    if (!form.email.trim()) {
+      setError("Enter your email first");
+      return;
+    }
+    setError("");
+    setInfo("");
+    setSendingCode(true);
+    try {
+      const res = await fetch(`${API}/api/auth/email/send-code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: form.email.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Could not send code");
+      setInfo(data.message || "Code sent");
+      startCooldown();
+    } catch (err) {
+      setError(err.message || "Could not send code");
+    } finally {
+      setSendingCode(false);
+    }
+  };
+
+  const verifyCode = async () => {
+    if (!/^\d{6}$/.test(form.code.trim())) {
+      setError("Enter the 6-digit code");
+      return;
+    }
+    setError("");
+    setInfo("");
+    setVerifying(true);
+    try {
+      const res = await fetch(`${API}/api/auth/email/verify-code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: form.email.trim(), code: form.code.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Invalid code");
+      setEmailTicket(data.data.email_ticket);
+      setInfo("Email verified. You can create your account.");
+    } catch (err) {
+      setEmailTicket("");
+      setError(err.message || "Invalid code");
+    } finally {
+      setVerifying(false);
+    }
   };
 
   const onSubmit = async (e) => {
@@ -106,20 +181,16 @@ export default function SignUp() {
           username: form.username.trim(),
           password: form.password,
           confirm_password: form.confirm,
+          email_ticket: emailTicket,
         }),
       });
 
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || "Could not create account");
-      }
+      if (!res.ok) throw new Error(data.message || "Could not create account");
 
       localStorage.setItem("token", data.data.token);
       localStorage.setItem("user", JSON.stringify(data.data.user));
-      if (avatarFile) {
-        localStorage.setItem("pendingAvatarName", avatarFile.name);
-      }
-
+      if (avatarFile) localStorage.setItem("pendingAvatarName", avatarFile.name);
       window.location.href = "/dashboard";
     } catch (err) {
       setError(err.message || "Signup failed. Is the backend running?");
@@ -137,10 +208,9 @@ export default function SignUp() {
             <div className="su-brand-text">
               <strong>CRYSTAL WEB3</strong>
               <span>— ACADEMY —</span>
-              <p className="su-tag">SHARPEN YOUR MIND. SHAPE YOUR FUTURE.</p>
+              <p className="su-tag">Explore the future of digital assets and decentralized infrastructure.</p>
             </div>
           </div>
-
           <div className="su-feat">
             <img src={iconLearn} alt="" />
             <div>
@@ -173,7 +243,7 @@ export default function SignUp() {
 
         <form className="su-card" onSubmit={onSubmit}>
           <h1>Create your account</h1>
-          <p className="lead">Welcome! Please fill in the details to get started.</p>
+          <p className="lead">Verify your email before creating the account.</p>
 
           <div className="su-avatar">
             <img src={avatar} alt="Your avatar" />
@@ -188,6 +258,36 @@ export default function SignUp() {
 
           <label className="su-label">EMAIL</label>
           <input className="su-input" type="email" placeholder="Enter your email" value={form.email} onChange={set("email")} />
+
+          <label className="su-label">EMAIL CODE</label>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8 }}>
+            <input
+              className="su-input"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="6-digit code"
+              value={form.code}
+              onChange={set("code")}
+            />
+            <button
+              type="button"
+              className="su-primary"
+              onClick={sendCode}
+              disabled={sendingCode || cooldown > 0}
+              style={{ width: "auto", padding: "0 16px", whiteSpace: "nowrap" }}
+            >
+              {cooldown > 0 ? `${cooldown}s` : sendingCode ? "SENDING" : "GET CODE"}
+            </button>
+          </div>
+          <button
+            type="button"
+            className="su-oauth"
+            onClick={verifyCode}
+            disabled={verifying || !form.code}
+            style={{ marginTop: 8 }}
+          >
+            {emailTicket ? "EMAIL VERIFIED" : verifying ? "VERIFYING..." : "VERIFY CODE"}
+          </button>
 
           <label className="su-label">USERNAME</label>
           <input className="su-input" placeholder="Choose a username" value={form.username} onChange={set("username")} />
@@ -207,6 +307,7 @@ export default function SignUp() {
             ))}
           </div>
 
+          {info ? <p className="su-note">{info}</p> : null}
           {error ? <p className="su-error">{error}</p> : null}
 
           <button className="su-primary" type="submit" disabled={!ready}>
@@ -214,28 +315,14 @@ export default function SignUp() {
           </button>
 
           <div className="su-or">or</div>
-
           <div className="su-social">
-            <button
-              type="button"
-              className="su-oauth"
-              onClick={() => {
-                window.location.href = `${API}/api/auth/google`;
-              }}
-            >
+            <button type="button" className="su-oauth" onClick={() => { window.location.href = `${API}/api/auth/google`; }}>
               <GoogleIcon /> Continue with Google
             </button>
-            <button
-              type="button"
-              className="su-oauth"
-              onClick={() => {
-                window.location.href = `${API}/api/auth/github`;
-              }}
-            >
+            <button type="button" className="su-oauth" onClick={() => { window.location.href = `${API}/api/auth/github`; }}>
               <GitHubIcon /> Continue with GitHub
             </button>
           </div>
-
           <p className="su-foot">
             Already have an account? <Link to="/signin">SIGN IN</Link>
           </p>

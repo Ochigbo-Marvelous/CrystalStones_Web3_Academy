@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
-import crystal from "../assets/brand/crystal-hero.png";
-import logo from "../assets/brand/logo-hex.png";
+import { useNavigate } from "react-router-dom";
+import Navbar from "./Navbar";
+import crystal from "../assets/brand/hero-crystal.png";
 import "../styles/dashboard.css";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5001";
@@ -12,38 +12,6 @@ const formatTime = (mins = 0) => {
   const m = n % 60;
   return h ? `${h}h ${m}m` : `${m}m`;
 };
-
-function Navbar({ user }) {
-  return (
-    <header className="db-nav">
-      <div className="db-brand">
-        <img src={logo} alt="" />
-        <div>
-          <strong>Crystal Stones Academy</strong>
-          <span>Forge Knowledge. Achieve Mastery.</span>
-        </div>
-      </div>
-
-      <nav className="db-pills">
-        <NavLink to="/dashboard" end>Dashboard</NavLink>
-        <NavLink to="/courses">Courses</NavLink>
-        <NavLink to="/mentor">Crystal Mentor</NavLink>
-        <NavLink to="/achievements">Achievements</NavLink>
-        <NavLink to="/profile">Profile</NavLink>
-      </nav>
-
-      <div className="db-user">
-        <div className="db-user-meta">
-          <b>{user?.full_name || user?.username || "Learner"}</b>
-          <small>{user?.current_rank || "Novice"}</small>
-        </div>
-        <div className="db-avatar">
-          {user?.avatar ? <img src={user.avatar} alt="" /> : (user?.username || "U").slice(0, 1).toUpperCase()}
-        </div>
-      </div>
-    </header>
-  );
-}
 
 function Skeleton() {
   return (
@@ -110,6 +78,14 @@ export default function Dashboard() {
     });
   }, [courses, level, query]);
 
+  const openCourse = (course) => {
+    if (course.is_paid) {
+      navigate(`/checkout/${course.id}`);
+      return;
+    }
+    navigate(`/courses/${course.slug || course.id}`);
+  };
+
   if (!data && !error) return <Skeleton />;
 
   const user = data?.user || {};
@@ -122,7 +98,7 @@ export default function Dashboard() {
       <Navbar user={user} />
 
       <section className="db-hero">
-        <div>
+        <div className="db-hero-copy">
           <h1>Welcome back, {firstName}</h1>
           <p>Stay focused, keep learning.</p>
           <div className="db-actions">
@@ -130,6 +106,10 @@ export default function Dashboard() {
               className="db-btn"
               onClick={() => document.getElementById("course-search")?.scrollIntoView({ behavior: "smooth" })}
             >
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 0-3 3z" />
+                <path d="M5 4.5A3 3 0 0 0 8 7.5v15" />
+              </svg>
               Continue Learning
             </button>
             <button
@@ -140,11 +120,13 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
+
         <img className="db-hero-crystal" src={crystal} alt="" />
+
         <aside className="db-streak">
-          <span>Fire Streak</span>
+          <div className="db-streak-top">Fire Streak</div>
           <strong>{stats.current_streak || 0} days</strong>
-          <small>Keep the streak alive</small>
+          <small>Keep the streak alive!</small>
         </aside>
       </section>
 
@@ -230,7 +212,12 @@ export default function Dashboard() {
             <p className="db-empty">No courses match that search.</p>
           ) : (
             filtered.map((course) => (
-              <article className="db-course" key={course.id}>
+              <article
+                className="db-course"
+                key={course.id}
+                onClick={() => openCourse(course)}
+                style={{ cursor: "pointer" }}
+              >
                 <img src={crystal} alt="" />
                 <h3>{course.title}</h3>
                 <small>{course.level === "beginner" ? "Basic" : course.level}</small>

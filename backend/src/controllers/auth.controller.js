@@ -3,8 +3,14 @@ const authService = require("../services/auth.service");
 const oauthService = require("../services/oauth.service");
 
 const signup = asyncHandler(async (req, res) => {
-  const { full_name, username, email, password } = req.body;
-  const result = await authService.signup({ full_name, username, email, password });
+  const { full_name, username, email, password, email_ticket } = req.body;
+  const result = await authService.signup({
+    full_name,
+    username,
+    email,
+    password,
+    email_ticket,
+  });
   res.status(201).json({ success: true, message: "Account created successfully", data: result });
 });
 
@@ -21,6 +27,30 @@ const logout = asyncHandler(async (req, res) => {
 
 const getMe = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, data: { user: req.user } });
+});
+
+const sendSignupCode = asyncHandler(async (req, res) => {
+  const result = await authService.sendSignupCode(req.body.email);
+  res.status(200).json({ success: true, message: result.message });
+});
+
+const verifySignupCode = asyncHandler(async (req, res) => {
+  const result = await authService.verifySignupCode(req.body.email, req.body.code);
+  res.status(200).json({ success: true, message: "Email verified", data: result });
+});
+
+const sendResetCode = asyncHandler(async (req, res) => {
+  const result = await authService.sendResetCode(req.body.email);
+  res.status(200).json({ success: true, message: result.message });
+});
+
+const resetPassword = asyncHandler(async (req, res) => {
+  const result = await authService.resetPassword(
+    req.body.email,
+    req.body.code,
+    req.body.new_password
+  );
+  res.status(200).json({ success: true, message: result.message });
 });
 
 const githubStart = asyncHandler(async (req, res) => {
@@ -62,6 +92,10 @@ module.exports = {
   login,
   logout,
   getMe,
+  sendSignupCode,
+  verifySignupCode,
+  sendResetCode,
+  resetPassword,
   githubStart,
   githubCallback,
   googleStart,

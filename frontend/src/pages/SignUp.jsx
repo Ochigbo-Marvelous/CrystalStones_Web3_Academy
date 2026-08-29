@@ -10,6 +10,8 @@ import iconCommunity from "../assets/brand/icon-community.png";
 import "../styles/signup.css";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5001";
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
+const ALLOWED_AVATAR = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 function GoogleIcon() {
   return (
@@ -45,6 +47,11 @@ const stars = [
   { left: "83%", delay: "2.4s", duration: "8.4s", color: "#4da3ff", size: 3 },
   { left: "92%", delay: "1s", duration: "7.2s", color: "#ff3b3b", size: 2 },
 ];
+
+const persistSession = (token, user) => {
+  localStorage.setItem("token", token);
+  localStorage.setItem("user", JSON.stringify(user));
+};
 
 export default function SignUp() {
   const [form, setForm] = useState({
@@ -105,13 +112,22 @@ export default function SignUp() {
 
   const onAvatar = (e) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setError("Please choose an image file");
+    if (!ALLOWED_AVATAR.has(file.type)) {
+      setError("Please choose a JPG, PNG, or WebP image");
       return;
     }
+    if (file.size > MAX_AVATAR_BYTES) {
+      setError("Image must be under 2MB");
+      return;
+    }
+    setError("");
     setAvatarFile(file);
-    setAvatar(URL.createObjectURL(file));
+    setAvatar((prev) => {
+      if (typeof prev === "string" && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
   };
 
   const sendCode = async () => {
@@ -165,12 +181,25 @@ export default function SignUp() {
     }
   };
 
+  const uploadAvatar = async (token) => {
+    if (!avatarFile) return null;
+    const body = new FormData();
+    body.append("avatar", avatarFile);
+    const res = await fetch(`${API}/api/profile/avatar`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || "Account created, but avatar upload failed");
+    return data.data?.avatar || null;
+  };
+
   const onSubmit = async (e) => {
     e.preventDefault();
     if (!ready) return;
     setError("");
     setLoading(true);
-
     try {
       const res = await fetch(`${API}/api/auth/signup`, {
         method: "POST",
@@ -184,13 +213,18 @@ export default function SignUp() {
           email_ticket: emailTicket,
         }),
       });
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Could not create account");
-
-      localStorage.setItem("token", data.data.token);
-      localStorage.setItem("user", JSON.stringify(data.data.user));
-      if (avatarFile) localStorage.setItem("pendingAvatarName", avatarFile.name);
+      const token = data.data.token;
+      let user = data.data.user;
+      persistSession(token, user);
+      if (avatarFile) {
+        const avatarPath = await uploadAvatar(token);
+        if (avatarPath) {
+          user = { ...user, avatar: avatarPath };
+          persistSession(token, user);
+        }
+      }
       window.location.href = "/dashboard";
     } catch (err) {
       setError(err.message || "Signup failed. Is the backend running?");
@@ -249,7 +283,7 @@ export default function SignUp() {
             <img src={avatar} alt="Your avatar" />
             <label className="su-avatar-btn">
               Upload photo
-              <input type="file" accept="image/*" onChange={onAvatar} hidden />
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onAvatar} hidden />
             </label>
           </div>
 

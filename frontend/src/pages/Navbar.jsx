@@ -2,6 +2,9 @@ import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import logo from "../assets/brand/logo-hex.png";
 import { rankImage } from "../lib/rankAssets";
+import { avatarSrc } from "../lib/avatarUrl";
+
+const API = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 function IconHome() {
   return (
@@ -46,15 +49,34 @@ function IconUser() {
   );
 }
 
+const readStoredUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem("user") || "null");
+  } catch {
+    return null;
+  }
+};
+
+const logout = async () => {
+  const token = localStorage.getItem("token");
+  try {
+    if (token) {
+      await fetch(`${API}/api/auth/logout`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
+  } catch {
+    // local session still cleared below
+  }
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  window.location.href = "/signin";
+};
+
 export default function Navbar({ user }) {
   const [open, setOpen] = useState(false);
-
-  let stored = null;
-  try {
-    stored = JSON.parse(localStorage.getItem("user") || "null");
-  } catch {
-    // ignore invalid localStorage
-  }
+  const stored = readStoredUser();
 
   const name =
     user?.full_name ||
@@ -63,7 +85,8 @@ export default function Navbar({ user }) {
     stored?.username ||
     "";
   const rank = user?.current_rank || stored?.current_rank || "Novice";
-  const avatar = user?.avatar || stored?.avatar || "";
+  const photo = avatarSrc(user?.avatar || stored?.avatar);
+  const initial = (name || "U").slice(0, 1).toUpperCase();
 
   return (
     <header className={`db-nav${open ? " is-open" : ""}`}>
@@ -106,13 +129,16 @@ export default function Navbar({ user }) {
 
       <div className="db-user">
         <div className="db-avatar">
-          {avatar ? <img src={avatar} alt="" /> : (name || "U").slice(0, 1).toUpperCase()}
+          {photo ? <img src={photo} alt="" /> : initial}
         </div>
         {name ? <b className="db-username">{name}</b> : null}
         <div className="db-rank">
           <img src={rankImage(rank)} alt="" />
           <span>{rank}</span>
         </div>
+        <button type="button" className="db-logout" onClick={logout}>
+          Log out
+        </button>
       </div>
     </header>
   );

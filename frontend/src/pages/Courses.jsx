@@ -23,60 +23,55 @@ const CRYSTAL_BY_SLUG = {
   "crypto-foundations": crystal01,
 };
 
-const crystalFor = (course) => {
+const PLANNED = {
+  beginner: [
+    { slug: "crypto-foundations", title: "Crypto Foundations" },
+    { slug: "wallets-keys-self-custody", title: "Wallets, Keys & Self-Custody" },
+    { slug: "exchanges-first-buy", title: "Exchanges & Your First Buy" },
+    { slug: "bnb-smart-chain-beginners", title: "Blockchain & BNB Smart Chain for Beginners" },
+    { slug: "crypto-safety-scams", title: "Crypto Safety & Common Scams" },
+  ],
+  intermediate: [
+    { slug: "ethereum-smart-contracts", title: "Ethereum, Smart Contracts & Tokens" },
+    { slug: "defi-decentralized-finance", title: "DeFi & Decentralized Finance" },
+    { slug: "tokenomics", title: "Tokenomics — How Coins Are Designed" },
+    { slug: "trading-markets", title: "Trading & Markets" },
+    { slug: "nfts-digital-assets", title: "NFTs & Digital Assets" },
+    { slug: "daos-governance", title: "DAOs & Governance" },
+    { slug: "rwa-specialization", title: "Real-World Assets (RWA)" },
+    { slug: "crystal-stones-ecosystem", title: "Crystal Stones Ecosystem" },
+  ],
+  advanced: [
+    { slug: "web3-architecture", title: "Web3 Architecture" },
+    { slug: "security-specialization", title: "Security Specialization" },
+    { slug: "on-chain-research", title: "On-Chain Research" },
+    { slug: "regulation-industry", title: "Regulation & Industry" },
+    { slug: "build-your-own-token", title: "Building Your Own Token" },
+    { slug: "practical-capstone", title: "Practical Capstone" },
+  ],
+};
+
+const crystalFor = (course, index = 0) => {
   if (course.thumbnail) return course.thumbnail;
   if (CRYSTAL_BY_SLUG[course.slug]) return CRYSTAL_BY_SLUG[course.slug];
-  return CRYSTALS[(Number(course.id) || 0) % CRYSTALS.length];
+  return CRYSTALS[(Number(course.id) || index) % CRYSTALS.length];
 };
 
 const levelLabel = (level) => {
-  if (level === "beginner") return "Beginner";
+  if (level === "beginner") return "Basic";
   if (level === "intermediate") return "Intermediate";
   if (level === "advanced") return "Advanced";
   return level;
 };
 
-function IconGrid() {
+function IconLock() {
   return (
     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <rect x="4" y="4" width="6.5" height="6.5" rx="1.2" />
-      <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.2" />
-      <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.2" />
-      <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.2" />
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
     </svg>
   );
 }
-function IconBook() {
-  return (
-    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <path d="M5 5.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 0-3 3z" />
-      <path d="M5 5.5A3 3 0 0 0 8 8.5V21" />
-    </svg>
-  );
-}
-function IconLayers() {
-  return (
-    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <path d="M4 8.5 12 4l8 4.5-8 4.5z" />
-      <path d="M4 12.5 12 17l8-4.5" />
-      <path d="M4 16.5 12 21l8-4.5" />
-    </svg>
-  );
-}
-function IconBolt() {
-  return (
-    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <path d="M13 3 6 13h6l-1 8 7-10h-6z" />
-    </svg>
-  );
-}
-
-const CATEGORIES = [
-  { value: "all", label: "All Courses", Icon: IconGrid },
-  { value: "beginner", label: "Basic", Icon: IconBook },
-  { value: "intermediate", label: "Intermediate", Icon: IconLayers },
-  { value: "advanced", label: "Advanced", Icon: IconBolt },
-];
 
 function Skeleton() {
   return (
@@ -91,6 +86,83 @@ function Skeleton() {
   );
 }
 
+function CourseCard({ course, progress, locked, soon, crystalImg, onOpen }) {
+  const pct = Math.round(progress?.percent || 0);
+  const enrolled = Boolean(progress);
+  const done = progress?.status === "completed" || pct >= 100;
+
+  return (
+    <article
+      className={`cs-card${soon ? " is-soon" : ""}${locked ? " is-locked" : ""}${done ? " is-done" : ""}`}
+      onClick={() => onOpen(course)}
+    >
+      <img src={crystalImg} alt="" />
+      <div className="cs-card-copy">
+        <h3>{course.title}</h3>
+        <small>{levelLabel(course.level)}</small>
+        {soon ? (
+          <p>Coming soon</p>
+        ) : locked ? (
+          <p>Locked with this track</p>
+        ) : enrolled ? (
+          <>
+            <p>{done ? "Completed" : `${pct}% Complete`}</p>
+            <div className="cs-bar">
+              <span style={{ width: `${done ? 100 : Math.max(pct, 4)}%` }} />
+            </div>
+          </>
+        ) : (
+          <>
+            <p>{course.isLive ? "Free · Enroll" : "Coming online"}</p>
+            <div className="cs-bar">
+              <span style={{ width: "0%" }} />
+            </div>
+          </>
+        )}
+      </div>
+      {locked || soon ? (
+        <span className="cs-card-lock" aria-hidden="true">
+          <IconLock />
+        </span>
+      ) : null}
+    </article>
+  );
+}
+
+function TrackBox({ title, copy, badge, locked, soon, courses, progressMap, onOpen }) {
+  return (
+    <section className={`cs-track${locked ? " is-locked" : ""}${soon ? " is-soon" : ""}`}>
+      <header className="cs-track-head">
+        <div>
+          <h2>{title}</h2>
+          <p>{copy}</p>
+        </div>
+        <span className={`cs-track-badge${locked || soon ? " locked" : ""}`}>
+          {locked || soon ? <IconLock /> : null}
+          {badge}
+        </span>
+      </header>
+      <div className="cs-grid">
+        {courses.length === 0 ? (
+          <p className="db-empty">No courses in this track yet.</p>
+        ) : (
+          courses.map((course, index) => (
+            <CourseCard
+              key={course.slug || course.id}
+              course={course}
+              progress={progressMap[Number(course.id)]}
+              locked={locked && !soon}
+              soon={soon || course.preview}
+              crystalImg={crystalFor(course, index)}
+              onOpen={onOpen}
+            />
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
 export default function Courses() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -99,7 +171,7 @@ export default function Courses() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("all");
+  const [enrolling, setEnrolling] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -148,33 +220,62 @@ export default function Courses() {
       });
   }, [navigate]);
 
-  const counts = useMemo(
-    () => ({
-      all: courses.length,
-      beginner: courses.filter((item) => item.level === "beginner").length,
-      intermediate: courses.filter((item) => item.level === "intermediate").length,
-      advanced: courses.filter((item) => item.level === "advanced").length,
-    }),
-    [courses]
-  );
+  const grouped = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const byLevel = { beginner: [], intermediate: [], advanced: [] };
 
-  const visible = useMemo(() => {
-    return courses.filter((course) => {
+    courses.forEach((course) => {
       const hay = `${course.title} ${course.description || ""}`.toLowerCase();
-      const matchQuery = hay.includes(query.trim().toLowerCase());
-      const matchCategory = category === "all" || course.level === category;
-      return matchQuery && matchCategory;
+      if (q && !hay.includes(q)) return;
+      const level = course.level || "beginner";
+      if (byLevel[level]) byLevel[level].push({ ...course, isLive: true });
     });
-  }, [courses, query, category]);
 
-  const openCourse = (course) => {
-    if (course.level === "advanced") return;
-    const progress = progressMap[Number(course.id)];
-    if (course.is_paid && !progress) {
-      navigate(`/checkout/${course.id}`);
+    Object.keys(PLANNED).forEach((level) => {
+      const existing = new Set(byLevel[level].map((item) => item.slug));
+      PLANNED[level].forEach((item) => {
+        if (existing.has(item.slug)) return;
+        if (q && !item.title.toLowerCase().includes(q)) return;
+        byLevel[level].push({
+          ...item,
+          level,
+          isLive: false,
+          preview: true,
+        });
+      });
+    });
+
+    return byLevel;
+  }, [courses, query]);
+
+  const openCourse = async (course) => {
+    if (enrolling) return;
+    if (course.level === "advanced" || course.preview) return;
+    if (course.level === "intermediate") return;
+
+    const token = localStorage.getItem("token");
+    const already = progressMap[Number(course.id)];
+    if (already) {
+      navigate(`/courses/${course.slug}`);
       return;
     }
-    navigate(`/courses/${course.slug}`);
+
+    setEnrolling(true);
+    try {
+      const res = await fetch(`${API}/api/enrollments/${course.id}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok && res.status !== 409) {
+        throw new Error(json.message || "Could not enroll");
+      }
+      navigate(`/courses/${course.slug}`);
+    } catch (err) {
+      setError(err.message || "Could not enroll");
+    } finally {
+      setEnrolling(false);
+    }
   };
 
   if (!ready) return <Skeleton />;
@@ -186,7 +287,7 @@ export default function Courses() {
       <section className="cs-top">
         <div className="cs-top-copy">
           <h1>Courses</h1>
-          <p>Expand your knowledge. Master the crystals.</p>
+          <p>Learn by track. Unlock a level, then pick any course inside it.</p>
         </div>
         <label className="cs-search">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -203,73 +304,34 @@ export default function Courses() {
 
       {error ? <p className="db-empty cs-error">{error}</p> : null}
 
-      <div className="cs-layout">
-        <aside className="cs-side">
-          <h3>Categories</h3>
-          <div className="cs-side-list">
-            {CATEGORIES.map((item) => {
-              const Icon = item.Icon;
-              return (
-                <button
-                  key={item.value}
-                  type="button"
-                  className={category === item.value ? "active" : ""}
-                  onClick={() => setCategory(item.value)}
-                >
-                  <span className="cs-side-label">
-                    <Icon />
-                    {item.label}
-                  </span>
-                  <b>{counts[item.value]}</b>
-                </button>
-              );
-            })}
-          </div>
-        </aside>
-
-        <div className="cs-grid">
-          {visible.length === 0 ? (
-            <p className="db-empty">No courses in this filter yet.</p>
-          ) : (
-            visible.map((course) => {
-              const progress = progressMap[Number(course.id)];
-              const pct = Math.round(progress?.percent || 0);
-              const enrolled = Boolean(progress);
-              const done = progress?.status === "completed" || pct >= 100;
-              const soon = course.level === "advanced";
-              return (
-                <article
-                  className={`cs-card${soon ? " is-soon" : ""}${done ? " is-done" : ""}`}
-                  key={course.id}
-                  onClick={() => openCourse(course)}
-                >
-                  <img src={crystalFor(course)} alt="" />
-                  <div className="cs-card-copy">
-                    <h3>{course.title}</h3>
-                    <small>{levelLabel(course.level)}</small>
-                    {soon ? (
-                      <p>Coming soon</p>
-                    ) : enrolled ? (
-                      <>
-                        <p>{done ? "Completed" : `${pct}% Complete`}</p>
-                        <div className="cs-bar">
-                          <span style={{ width: `${done ? 100 : Math.max(pct, 4)}%` }} />
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <p>{course.is_paid ? `$${course.price_usd}` : "Free"}</p>
-                        <div className="cs-bar">
-                          <span style={{ width: "0%" }} />
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </article>
-              );
-            })
-          )}
-        </div>
+      <div className="cs-tracks">
+        <TrackBox
+          title="Basic"
+          copy="Free for every learner. Start here if you're new to crypto."
+          badge="Unlocked"
+          courses={grouped.beginner}
+          progressMap={progressMap}
+          onOpen={openCourse}
+        />
+        <TrackBox
+          title="Intermediate"
+          copy="One payment unlocks every course in this track. Price in USD, paid as USDT on BNB Smart Chain (BEP-20)."
+          badge="Locked · Price TBA"
+          locked
+          courses={grouped.intermediate}
+          progressMap={progressMap}
+          onOpen={openCourse}
+        />
+        <TrackBox
+          title="Advanced"
+          copy="Video lessons and the builder path. One payment unlocks every course in this track. Price in USD, paid as USDT on BNB Smart Chain (BEP-20)"
+          badge="Coming soon"
+          locked
+          soon
+          courses={grouped.advanced}
+          progressMap={progressMap}
+          onOpen={openCourse}
+        />
       </div>
     </div>
   );

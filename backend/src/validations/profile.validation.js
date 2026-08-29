@@ -1,25 +1,15 @@
 const { z } = require("zod");
 
-const isAllowedAvatar = (value) => {
-  if (!value) return true;
-  if (value.startsWith("/uploads/")) return /^\/uploads\/[\w.-]+$/.test(value);
-  try {
-    return new URL(value).protocol === "https:";
-  } catch {
-    return false;
-  }
-};
-
 const updateProfileSchema = z.object({
   body: z.object({
-    full_name: z.string().min(2).max(100).optional(),
-    avatar: z
+    full_name: z.string().trim().min(2).max(100).optional(),
+    username: z
       .string()
-      .max(255)
-      .optional()
-      .or(z.literal(""))
-      .or(z.null())
-      .refine(isAllowedAvatar, "Avatar must be an https URL or /uploads/ path"),
+      .trim()
+      .min(3, "Username must be at least 3 characters")
+      .max(24, "Username must be at most 24 characters")
+      .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and _")
+      .optional(),
   }),
 });
 
@@ -42,7 +32,30 @@ const changePasswordSchema = z.object({
     }),
 });
 
+const sendEmailCodeSchema = z.object({
+  body: z.object({
+    email: z.string().trim().email("Enter a valid email"),
+  }),
+});
+
+const changeEmailSchema = z.object({
+  body: z.object({
+    email: z.string().trim().email("Enter a valid email"),
+    code: z.string().regex(/^\d{6}$/, "Enter the 6-digit code"),
+  }),
+});
+
+const deleteAccountSchema = z.object({
+  body: z.object({
+    password: z.string().optional(),
+    confirm: z.string().optional(),
+  }),
+});
+
 module.exports = {
   updateProfileSchema,
   changePasswordSchema,
+  sendEmailCodeSchema,
+  changeEmailSchema,
+  deleteAccountSchema,
 };

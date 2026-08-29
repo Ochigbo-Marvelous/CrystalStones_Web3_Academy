@@ -1,3 +1,4 @@
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -23,7 +24,11 @@ const paymentRoutes = require("./routes/payment.routes");
 
 const app = express();
 
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 app.use(
   cors({
     origin: config.frontendUrl,
@@ -81,6 +86,14 @@ app.use(
   })
 );
 app.use(express.urlencoded({ extended: true }));
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "../uploads"), {
+    index: false,
+    maxAge: "7d",
+    fallthrough: true,
+  })
+);
 
 if (config.nodeEnv === "development") {
   app.use(morgan("dev"));

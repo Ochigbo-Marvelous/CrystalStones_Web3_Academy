@@ -21,9 +21,18 @@ const formatTime = (mins = 0) => {
   return h ? `${h}h ${m}m` : `${m}m`;
 };
 
+const isBadMentorLine = (text = "") =>
+  /route\s+\/api\/mentor|not found|stack|sql|token failed/i.test(String(text));
+
 const readThread = () => {
   try {
-    return JSON.parse(localStorage.getItem(MENTOR_KEY) || "[]");
+    const parsed = JSON.parse(localStorage.getItem(MENTOR_KEY) || "[]");
+    if (!Array.isArray(parsed)) return [];
+    const cleaned = parsed.filter((item) => item && item.text && !isBadMentorLine(item.text));
+    if (cleaned.length !== parsed.length) {
+      localStorage.setItem(MENTOR_KEY, JSON.stringify(cleaned));
+    }
+    return cleaned;
   } catch {
     return [];
   }
@@ -115,17 +124,24 @@ export default function Dashboard() {
   }, [navigate]);
 
   const saveThread = (next) => {
-    const clipped = next.slice(-40);
+    const clipped = next
+      .filter((item) => item && item.text && !isBadMentorLine(item.text))
+      .slice(-40);
     localStorage.setItem(MENTOR_KEY, JSON.stringify(clipped));
     setThread(clipped);
   };
 
   const askMentor = async (event) => {
     event.preventDefault();
-    const question = mentorInput.trim();
+    const question = mentorInput.trim().slice(0, 500);
     if (!question || mentorBusy) return;
 
     const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/signin", { replace: true });
+      return;
+    }
+
     setMentorBusy(true);
 
     const pending = [...thread, { role: "user", text: question, at: Date.now() }];
@@ -141,8 +157,11 @@ export default function Dashboard() {
         },
         body: JSON.stringify({ question }),
       });
-      const json = await res.json();
-      const answer = json?.data?.answer || json.message || "I could not find an answer yet.";
+      const json = await res.json().catch(() => ({}));
+      const answer =
+        res.ok && json?.success && json?.data?.answer
+          ? String(json.data.answer)
+          : "Mentor is unavailable right now.";
       saveThread([...pending, { role: "mentor", text: answer, at: Date.now() }]);
     } catch {
       saveThread([...pending, { role: "mentor", text: "Mentor is unavailable right now.", at: Date.now() }]);
@@ -170,7 +189,8 @@ export default function Dashboard() {
   const stats = data?.stats || {};
   const inProgress = data?.in_progress || [];
   const rank = data?.rank_progress || {};
-  const firstName = (user.full_name || user.username || "Learner").split(" ")[0];
+  const displayRank = rank.rank || user.current_rank || "Novice";
+  const crystalId = user.username || "Learner";
   const progress = Math.round(stats.overall_progress || 0);
 
   const openCourse = (course) => {
@@ -179,11 +199,11 @@ export default function Dashboard() {
 
   return (
     <div className="db">
-      <Navbar user={user} />
+      <Navbar user={{ ...user, current_rank: displayRank }} />
 
       <section className="db-hero">
         <div className="db-hero-copy">
-          <h1>Welcome back, {firstName}</h1>
+          <h1>Welcome back, {crystalId}</h1>
           <p>Stay focused, keep learning.</p>
           <div className="db-actions">
             <button
@@ -258,10 +278,10 @@ export default function Dashboard() {
         </article>
 
         <article>
-          <img src={rankImage(user.current_rank)} alt="" />
+          <img src={rankImage(displayRank)} alt="" />
           <div>
             <small>Current Rank</small>
-            <b>{user.current_rank || "Novice"}</b>
+            <b>{displayRank}</b>
             <em>Level {rank.level || 1}</em>
           </div>
         </article>
@@ -357,7 +377,7 @@ export default function Dashboard() {
             </div>
             <div className="db-mentor-box">
               <img src={mentorCrystal} alt="" />
-              <p>Hello {firstName}! Ask about Crystal Stones, a lesson, or your next path.</p>
+              <p>Hello {crystalId}! Ask about Crystal Stones, a lesson, or your next path.</p>
             </div>
             <div className="db-chat">
               {thread.length === 0 ? (
@@ -375,6 +395,7 @@ export default function Dashboard() {
                 value={mentorInput}
                 onChange={(e) => setMentorInput(e.target.value)}
                 placeholder="Ask me anything..."
+                maxLength={500}
               />
               <button type="submit" disabled={mentorBusy}>
                 {mentorBusy ? "..." : "➤"}
@@ -389,12 +410,12 @@ export default function Dashboard() {
             </div>
             <div className="db-rankbox">
               <div>
-                <b>{rank.rank || user.current_rank || "Novice"}</b>
+                <b>{displayRank}</b>
                 <small>
                   {rank.xp_into || 0} / {rank.xp_target || 100} XP
                 </small>
               </div>
-              <img src={rankImage(rank.rank || user.current_rank)} alt="" />
+              <img src={rankImage(displayRank)} alt="" />
             </div>
             <div className="db-bar wide">
               <span style={{ width: `${rank.percent || 0}%` }} />

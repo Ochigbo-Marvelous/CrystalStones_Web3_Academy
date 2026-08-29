@@ -1,52 +1,21 @@
 const pool = require("../config/db");
-
-const RANK_LADDER = [
-  { name: "Novice", xp: 0 },
-  { name: "Apprentice", xp: 100 },
-  { name: "Scholar", xp: 300 },
-  { name: "Adept", xp: 600 },
-  { name: "Expert", xp: 1000 },
-  { name: "Master", xp: 1600 },
-];
-
-const buildRankProgress = ({ rank, completedCourses, overallProgress, streak }) => {
-  const xp = Math.max(
-    0,
-    completedCourses * 400 + Math.round(Number(overallProgress || 0) * 12) + Number(streak || 0) * 15
-  );
-
-  const currentIndex = Math.max(
-    0,
-    RANK_LADDER.findIndex((item) => item.name.toLowerCase() === String(rank || "Novice").toLowerCase())
-  );
-  const current = RANK_LADDER[currentIndex] || RANK_LADDER[0];
-  const next = RANK_LADDER[currentIndex + 1] || null;
-  const floor = current.xp;
-  const target = next ? next.xp : floor + 400;
-  const into = Math.min(target - floor, Math.max(0, xp - floor));
-
-  return {
-    rank: current.name,
-    next_rank: next ? next.name : current.name,
-    level: Math.max(1, currentIndex * 4 + 1 + completedCourses),
-    xp,
-    xp_into: into,
-    xp_target: target - floor,
-    xp_total_next: target,
-    remaining: Math.max(0, target - xp),
-    percent: Math.min(100, Math.round((into / Math.max(1, target - floor)) * 100)),
-  };
-};
+const { buildRankProgress } = require("../config/ranks");
 
 const getDashboardData = async (userId) => {
+  const id = Number(userId);
+  if (!Number.isInteger(id) || id <= 0) {
+    return null;
+  }
+
   const [users] = await pool.query(
     `SELECT id, full_name, username, email, avatar, current_rank,
             total_study_minutes, current_streak, longest_streak
-     FROM users WHERE id = ?`,
-    [userId]
+     FROM users WHERE id = ? LIMIT 1`,
+    [id]
   );
 
   const user = users[0];
+  if (!user) return null;
 
   const [enrollments] = await pool.query(
     `SELECT e.id, e.progress_percent, e.status, e.enrolled_at, e.completed_at,
@@ -55,7 +24,7 @@ const getDashboardData = async (userId) => {
      JOIN courses c ON e.course_id = c.id
      WHERE e.user_id = ?
      ORDER BY e.enrolled_at DESC`,
-    [userId]
+    [id]
   );
 
   const rows = enrollments.map((row) => ({
@@ -65,25 +34,46 @@ const getDashboardData = async (userId) => {
   }));
 
   const totalCourses = rows.length;
-  const completedCourses = rows.filter((e) => e.status === "completed" || e.progress_percent >= 100).length;
+  const completedCourses = rows.filter(
+    (item) => item.status === "completed" || item.progress_percent >= 100
+  ).length;
   const overallProgress =
     totalCourses > 0
-      ? rows.reduce((sum, e) => sum + Number(e.progress_percent), 0) / totalCourses
+      ? rows.reduce((sum, item) => sum + Number(item.progress_percent), 0) / totalCourses
       : 0;
 
-  const [certificates] = await pool.query(
-    "SELECT COUNT(*) as count FROM certificates WHERE user_id = ?",
-    [userId]
+  const [[certificateRow]] = await pool.query(
+    "SELECT COUNT(*) AS count FROM certificates WHERE user_id = ?",
+    [id]
+  );
+  const [[moduleRow]] = await pool.query(
+    `SELECT COUNT(*) AS count
+     FROM module_progress
+     WHERE user_id = ? AND quiz_passed = TRUE`,
+    [id]
   );
 
-  const inProgress = rows.filter((e) => e.status === "active" && Number(e.progress_percent) < 100);
-  const completed = rows.filter((e) => e.status === "completed" || Number(e.progress_percent) >= 100);
+  const inProgress = rows.filter(
+    (item) => item.status === "active" && Number(item.progress_percent) < 100
+  );
+  const completed = rows.filter(
+    (item) => item.status === "completed" || Number(item.progress_percent) >= 100
+  );
+
   const rankProgress = buildRankProgress({
-    rank: user.current_rank,
     completedCourses,
+    completedModules: Number(moduleRow.count || 0),
     overallProgress,
     streak: user.current_streak,
   });
+
+  if (rankProgress.rank !== user.current_rank) {
+    await pool.query("UPDATE users SET current_rank = ? WHERE id = ?", [
+      rankProgress.rank,
+      id,
+    ]);
+    user.current_rank = rankProgress.rank;
+  }
 
   return {
     user: {
@@ -92,16 +82,16 @@ const getDashboardData = async (userId) => {
       username: user.username,
       avatar: user.avatar,
       current_rank: user.current_rank,
-      current_streak: user.current_streak,
-      longest_streak: user.longest_streak,
+      current_streak: Number(user.current_streak || 0),
+      longest_streak: Number(user.longest_streak || 0),
     },
     stats: {
       total_courses: totalCourses,
       completed_courses: completedCourses,
       overall_progress: Number(overallProgress.toFixed(1)),
-      total_study_minutes: user.total_study_minutes,
-      certificates_earned: certificates[0].count,
-      current_streak: user.current_streak,
+      total_study_minutes: Number(user.total_study_minutes || 0),
+      certificates_earned: Number(certificateRow.count || 0),
+      current_streak: Number(user.current_streak || 0),
     },
     rank_progress: rankProgress,
     in_progress: inProgress,

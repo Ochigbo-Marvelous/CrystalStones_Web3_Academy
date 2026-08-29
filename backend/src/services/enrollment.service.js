@@ -2,15 +2,11 @@ const pool = require("../config/db");
 const ApiError = require("../utils/ApiError");
 
 const enrollInCourse = async (userId, courseId) => {
-  // Check if course exists
   const [courses] = await pool.query("SELECT * FROM courses WHERE id = ?", [courseId]);
   if (courses.length === 0) {
     throw new ApiError(404, "Course not found");
   }
 
-  const course = courses[0];
-
-  // Check if already enrolled
   const [existing] = await pool.query(
     "SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?",
     [userId, courseId]
@@ -19,9 +15,6 @@ const enrollInCourse = async (userId, courseId) => {
   if (existing.length > 0) {
     throw new ApiError(409, "You are already enrolled in this course");
   }
-
-  // If course is paid, we will later check payment here
-  // For now we allow enrollment (payment check comes in Phase 5)
 
   const [result] = await pool.query(
     `INSERT INTO enrollments (user_id, course_id, status, progress_percent)
@@ -38,7 +31,9 @@ const enrollInCourse = async (userId, courseId) => {
 
 const getUserEnrollments = async (userId) => {
   const [enrollments] = await pool.query(
-    `SELECT e.*, c.title, c.slug, c.thumbnail, c.level, c.is_paid
+    `SELECT e.id, e.user_id, e.course_id, e.status, e.progress_percent,
+            e.enrolled_at, e.completed_at,
+            c.title, c.slug, c.thumbnail, c.level, c.is_paid
      FROM enrollments e
      JOIN courses c ON e.course_id = c.id
      WHERE e.user_id = ?
@@ -46,7 +41,11 @@ const getUserEnrollments = async (userId) => {
     [userId]
   );
 
-  return enrollments;
+  return enrollments.map((row) => ({
+    ...row,
+    course_id: Number(row.course_id),
+    progress_percent: Number(row.progress_percent || 0),
+  }));
 };
 
 const getEnrollment = async (userId, courseId) => {

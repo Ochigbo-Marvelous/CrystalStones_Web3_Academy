@@ -49,7 +49,7 @@ const getDashboardData = async (userId) => {
   const user = users[0];
 
   const [enrollments] = await pool.query(
-    `SELECT e.id, e.progress_percent, e.status, e.enrolled_at,
+    `SELECT e.id, e.progress_percent, e.status, e.enrolled_at, e.completed_at,
             c.id as course_id, c.title, c.slug, c.thumbnail, c.level, c.total_modules, c.description
      FROM enrollments e
      JOIN courses c ON e.course_id = c.id
@@ -58,11 +58,17 @@ const getDashboardData = async (userId) => {
     [userId]
   );
 
-  const totalCourses = enrollments.length;
-  const completedCourses = enrollments.filter((e) => e.status === "completed").length;
+  const rows = enrollments.map((row) => ({
+    ...row,
+    course_id: Number(row.course_id),
+    progress_percent: Number(row.progress_percent || 0),
+  }));
+
+  const totalCourses = rows.length;
+  const completedCourses = rows.filter((e) => e.status === "completed" || e.progress_percent >= 100).length;
   const overallProgress =
     totalCourses > 0
-      ? enrollments.reduce((sum, e) => sum + Number(e.progress_percent), 0) / totalCourses
+      ? rows.reduce((sum, e) => sum + Number(e.progress_percent), 0) / totalCourses
       : 0;
 
   const [certificates] = await pool.query(
@@ -70,7 +76,8 @@ const getDashboardData = async (userId) => {
     [userId]
   );
 
-  const inProgress = enrollments.filter((e) => e.status === "active");
+  const inProgress = rows.filter((e) => e.status === "active" && Number(e.progress_percent) < 100);
+  const completed = rows.filter((e) => e.status === "completed" || Number(e.progress_percent) >= 100);
   const rankProgress = buildRankProgress({
     rank: user.current_rank,
     completedCourses,
@@ -98,7 +105,8 @@ const getDashboardData = async (userId) => {
     },
     rank_progress: rankProgress,
     in_progress: inProgress,
-    all_enrollments: enrollments,
+    completed,
+    all_enrollments: rows,
   };
 };
 

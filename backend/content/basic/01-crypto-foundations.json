@@ -1,0 +1,125 @@
+{
+  "title": "Crypto Foundations",
+  "slug": "crypto-foundations",
+  "description": "Zero-to-literate: money, Bitcoin, blockchains, and tokens.",
+  "level": "beginner",
+  "is_paid": false,
+  "price_usd": 0,
+  "is_published": true,
+  "modules": [
+    {
+      "title": "Why crypto exists",
+      "order_index": 1,
+      "lessons": [
+        {
+          "title": "Money, banks, and the problem crypto tried to solve",
+          "order_index": 1,
+          "duration_minutes": 8,
+          "video_url": null,
+          "content": "Draft lesson. We will replace this with the full text."
+        },
+        {
+          "title": "What a cryptocurrency is (and is not)",
+          "order_index": 2,
+          "duration_minutes": 8,
+          "video_url": null,
+          "content": "Draft lesson. We will replace this with the full text."
+        },
+        {
+          "title": "Bitcoin in plain language",
+          "order_index": 3,
+          "duration_minutes": 8,
+          "video_url": null,
+          "content": "Draft lesson. We will replace this with the full text."
+        }
+      ],
+      "quiz": [
+        {
+          "question": "A cryptocurrency is best described as?",
+          "option_a": "Physical cash printed by a bank",
+          "option_b": "A digital asset secured by cryptography on a network",
+          "option_c": "A username on social media",
+          "option_d": "A private company stock",
+          "correct_option": "b",
+          "order_index": 1
+        }
+      ]
+    },
+    {
+      "title": "How a blockchain works",
+      "order_index": 2,
+      "lessons": [
+        {
+          "title": "Blocks, hashes, and why history is hard to edit",
+          "order_index": 1,
+          "duration_minutes": 8,
+          "video_url": null,
+          "content": "Draft lesson. We will replace this with the full text."
+        },
+        {
+          "title": "Consensus without a boss",
+          "order_index": 2,
+          "duration_minutes": 8,
+          "video_url": null,
+          "content": "Draft lesson. We will replace this with the full text."
+        },
+        {
+          "title": "Coins vs tokens",
+          "order_index": 3,
+          "duration_minutes": 8,
+          "video_url": null,
+          "content": "Draft lesson. We will replace this with the full text."
+        }
+      ],
+      "quiz": [
+        {
+          "question": "A token usually lives where?",
+          "option_a": "On a bank spreadsheet only",
+          "option_b": "As a smart contract on a blockchain",
+          "option_c": "Inside a phone battery",
+          "option_d": "On a paper receipt",
+          "correct_option": "b",
+          "order_index": 1
+        }
+      ]
+    },
+    {
+      "title": "The map of crypto",
+      "order_index": 3,
+      "lessons": [
+        {
+          "title": "Bitcoin, Ethereum, and BNB Smart Chain",
+          "order_index": 1,
+          "duration_minutes": 8,
+          "video_url": null,
+          "content": "Draft lesson. We will replace this with the full text."
+        },
+        {
+          "title": "What people actually use crypto for",
+          "order_index": 2,
+          "duration_minutes": 8,
+          "video_url": null,
+          "content": "Draft lesson. We will replace this with the full text."
+        },
+        {
+          "title": "How to read a project page without getting fooled",
+          "order_index": 3,
+          "duration_minutes": 8,
+          "video_url": null,
+          "content": "Draft lesson. We will replace this with the full text."
+        }
+      ],
+      "quiz": [
+        {
+          "question": "Crystal Stones runs on which network?",
+          "option_a": "Bitcoin only",
+          "option_b": "BNB Smart Chain (BEP-20)",
+          "option_c": "Ripple only",
+          "option_d": "Paper wallet network",
+          "correct_option": "b",
+          "order_index": 1
+        }
+      ]
+    }
+  ]
+}

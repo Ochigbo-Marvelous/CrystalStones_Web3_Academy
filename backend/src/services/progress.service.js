@@ -39,8 +39,13 @@ const submitQuiz = async (userId, moduleId, answers) => {
 
   let correctCount = 0;
   for (const question of questions) {
-    const userAnswer = answers.find((a) => a.questionId === question.id);
-    if (userAnswer && userAnswer.selected === question.correct_option) {
+    const userAnswer = answers.find(
+      (a) => Number(a.questionId) === Number(question.id)
+    );
+    if (
+      userAnswer &&
+      String(userAnswer.selected).toLowerCase() === String(question.correct_option).toLowerCase()
+    ) {
       correctCount += 1;
     }
   }
@@ -206,42 +211,37 @@ const updateUserRank = async (userId) => {
 const recordStudyActivity = async (userId, minutes = 1) => {
   const add = Math.min(Math.max(Number(minutes) || 0, 0), 5);
 
+  await pool.query(
+    `UPDATE users
+     SET
+       total_study_minutes = total_study_minutes + ?,
+       current_streak = CASE
+         WHEN last_activity_date = CURDATE() THEN current_streak
+         WHEN last_activity_date = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN current_streak + 1
+         ELSE 1
+       END,
+       longest_streak = GREATEST(
+         IFNULL(longest_streak, 0),
+         CASE
+           WHEN last_activity_date = CURDATE() THEN IFNULL(current_streak, 0)
+           WHEN last_activity_date = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN IFNULL(current_streak, 0) + 1
+           ELSE 1
+         END
+       ),
+       last_activity_date = CURDATE()
+     WHERE id = ?`,
+    [add, userId]
+  );
+
   const [rows] = await pool.query(
     "SELECT current_streak, longest_streak, last_activity_date FROM users WHERE id = ?",
     [userId]
   );
-  if (rows.length === 0) return;
 
-  const user = rows[0];
-  const today = new Date().toISOString().slice(0, 10);
-  const last = user.last_activity_date
-    ? new Date(user.last_activity_date).toISOString().slice(0, 10)
-    : null;
-
-  let streak = Number(user.current_streak || 0);
-
-  if (last === today) {
-    // already counted today
-  } else if (!last) {
-    streak = 1;
-  } else {
-    const diff = (new Date(`${today}T00:00:00Z`) - new Date(`${last}T00:00:00Z`)) / 86400000;
-    streak = diff === 1 ? streak + 1 : 1;
-  }
-
-  const longest = Math.max(Number(user.longest_streak || 0), streak);
-
-  await pool.query(
-    `UPDATE users
-     SET total_study_minutes = total_study_minutes + ?,
-         current_streak = ?,
-         longest_streak = ?,
-         last_activity_date = ?
-     WHERE id = ?`,
-    [add, streak, longest, today, userId]
-  );
-
-  return { current_streak: streak, added_minutes: add };
+  return {
+    current_streak: Number(rows[0]?.current_streak || 0),
+    added_minutes: add,
+  };
 };
 
 module.exports = {

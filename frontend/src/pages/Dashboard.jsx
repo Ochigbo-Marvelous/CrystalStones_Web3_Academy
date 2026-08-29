@@ -11,6 +11,8 @@ import "../styles/dashboard.css";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5001";
 const MENTOR_KEY = "mentor_thread";
+const COMPLETED_PER_PAGE = 3;
+const COMPLETED_MAX_PAGES = 100;
 
 const formatTime = (mins = 0) => {
   const n = Number(mins) || 0;
@@ -29,7 +31,7 @@ const readThread = () => {
 
 function Skeleton() {
   return (
-    <div className="db">
+    <div className="db sk-screen">
       <div className="sk sk-nav" />
       <div className="sk sk-hero" />
       <div className="sk-stats">
@@ -43,7 +45,28 @@ function Skeleton() {
         <span className="sk" />
         <span className="sk" />
       </div>
-      <div className="sk sk-find" />
+    </div>
+  );
+}
+
+function CourseRow({ course, crystalImg, done, onOpen }) {
+  const pct = done ? 100 : Math.round(course.progress_percent || 0);
+  return (
+    <div className="db-progress-row">
+      <img src={course.thumbnail || crystalImg} alt="" />
+      <div>
+        <b>{course.title}</b>
+        <small>{course.level === "beginner" ? "Basic" : course.level}</small>
+      </div>
+      <div className="db-progress-meta">
+        <div className="db-bar">
+          <span style={{ width: `${pct}%` }} />
+        </div>
+        <em>{done ? "Completed" : `${pct}% Complete`}</em>
+      </div>
+      <button className="db-btn slim" type="button" onClick={() => onOpen(course)}>
+        {done ? "Review" : "Continue"}
+      </button>
     </div>
   );
 }
@@ -51,13 +74,12 @@ function Skeleton() {
 export default function Dashboard() {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
-  const [courses, setCourses] = useState([]);
-  const [query, setQuery] = useState("");
-  const [level, setLevel] = useState("all");
   const [error, setError] = useState("");
+  const [ready, setReady] = useState(false);
   const [mentorInput, setMentorInput] = useState("");
   const [mentorBusy, setMentorBusy] = useState(false);
   const [thread, setThread] = useState(readThread);
+  const [completedPage, setCompletedPage] = useState(1);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -67,15 +89,13 @@ export default function Dashboard() {
     }
 
     const headers = { Authorization: `Bearer ${token}` };
+    const started = Date.now();
 
-    Promise.all([
-      fetch(`${API}/api/dashboard`, { headers }).then((res) => res.json()),
-      fetch(`${API}/api/courses`, { headers }).then((res) => res.json()),
-    ])
-      .then(([dash, list]) => {
+    fetch(`${API}/api/dashboard`, { headers })
+      .then((res) => res.json())
+      .then((dash) => {
         if (!dash.success) throw new Error(dash.message || "Dashboard failed");
         setData(dash.data);
-        setCourses(list.data || []);
         if (dash.data?.user) {
           localStorage.setItem("user", JSON.stringify(dash.data.user));
         }
@@ -87,24 +107,12 @@ export default function Dashboard() {
           return;
         }
         setError(err.message || "Could not load dashboard");
+      })
+      .finally(() => {
+        const wait = Math.max(0, 1000 - (Date.now() - started));
+        setTimeout(() => setReady(true), wait);
       });
   }, [navigate]);
-
-  const filtered = useMemo(() => {
-    return courses.filter((course) => {
-      const matchLevel = level === "all" || course.level === level;
-      const matchQuery = course.title.toLowerCase().includes(query.toLowerCase());
-      return matchLevel && matchQuery;
-    });
-  }, [courses, level, query]);
-
-  const openCourse = (course) => {
-    if (course.is_paid) {
-      navigate(`/checkout/${course.id}`);
-      return;
-    }
-    navigate(`/courses/${course.slug || course.id}`);
-  };
 
   const saveThread = (next) => {
     const clipped = next.slice(-40);
@@ -125,7 +133,7 @@ export default function Dashboard() {
     setMentorInput("");
 
     try {
-      const res = await fetch(`${API}/api/mentor`, {
+      const res = await fetch(`${API}/api/mentor/ask`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -143,7 +151,20 @@ export default function Dashboard() {
     }
   };
 
-  if (!data && !error) return <Skeleton />;
+  const completed = useMemo(() => data?.completed || [], [data]);
+  const totalCompletedPages = useMemo(() => {
+    const pages = Math.ceil(completed.length / COMPLETED_PER_PAGE);
+    return Math.min(COMPLETED_MAX_PAGES, Math.max(1, pages || 1));
+  }, [completed]);
+
+  const safeCompletedPage = Math.min(completedPage, totalCompletedPages);
+
+  const pagedCompleted = useMemo(() => {
+    const start = (safeCompletedPage - 1) * COMPLETED_PER_PAGE;
+    return completed.slice(start, start + COMPLETED_PER_PAGE);
+  }, [completed, safeCompletedPage]);
+
+  if (!ready) return <Skeleton />;
 
   const user = data?.user || {};
   const stats = data?.stats || {};
@@ -151,6 +172,10 @@ export default function Dashboard() {
   const rank = data?.rank_progress || {};
   const firstName = (user.full_name || user.username || "Learner").split(" ")[0];
   const progress = Math.round(stats.overall_progress || 0);
+
+  const openCourse = (course) => {
+    navigate(`/courses/${course.slug || course.course_id}`);
+  };
 
   return (
     <div className="db">
@@ -163,7 +188,11 @@ export default function Dashboard() {
           <div className="db-actions">
             <button
               className="db-btn"
-              onClick={() => document.getElementById("course-search")?.scrollIntoView({ behavior: "smooth" })}
+              onClick={() => {
+                if (inProgress[0]) return openCourse(inProgress[0]);
+                if (completed[0]) return openCourse(completed[0]);
+                navigate("/courses");
+              }}
             >
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 0-3 3z" />
@@ -171,10 +200,7 @@ export default function Dashboard() {
               </svg>
               Continue Learning
             </button>
-            <button
-              className="db-btn ghost"
-              onClick={() => document.getElementById("course-search")?.scrollIntoView({ behavior: "smooth" })}
-            >
+            <button className="db-btn ghost" onClick={() => navigate("/courses")}>
               Explore Courses
             </button>
           </div>
@@ -251,42 +277,74 @@ export default function Dashboard() {
       </section>
 
       <section className="db-main">
-        <div className="db-card">
-          <div className="db-card-head">
-            <h2>In Progress</h2>
-            <button className="db-link" type="button" onClick={() => navigate("/courses")}>
-              View All
-            </button>
+        <div className="db-left">
+          <div className="db-card db-equal">
+            <div className="db-card-head">
+              <h2>In Progress</h2>
+              <button className="db-link" type="button" onClick={() => navigate("/courses")}>
+                View All
+              </button>
+            </div>
+            <div className="db-card-body">
+              {inProgress.length === 0 ? (
+                <p className="db-empty">No course in progress. Start or continue from Courses.</p>
+              ) : (
+                inProgress.map((course) => (
+                  <CourseRow
+                    key={course.id || course.course_id}
+                    course={course}
+                    crystalImg={crystal}
+                    onOpen={openCourse}
+                  />
+                ))
+              )}
+            </div>
           </div>
-          {inProgress.length === 0 ? (
-            <p className="db-empty">No course in progress yet. Start with a Basic course below.</p>
-          ) : (
-            inProgress.map((course) => {
-              const pct = Math.round(course.progress_percent || 0);
-              return (
-                <div className="db-progress-row" key={course.id || course.course_id}>
-                  <img src={course.thumbnail || crystal} alt="" />
-                  <div>
-                    <b>{course.title}</b>
-                    <small>{course.level === "beginner" ? "Basic" : course.level}</small>
-                  </div>
-                  <div className="db-progress-meta">
-                    <div className="db-bar">
-                      <span style={{ width: `${pct}%` }} />
-                    </div>
-                    <em>{pct}% Complete</em>
-                  </div>
-                  <button
-                    className="db-btn slim"
-                    type="button"
-                    onClick={() => navigate(`/courses/${course.slug || course.course_id}`)}
-                  >
-                    Continue
-                  </button>
-                </div>
-              );
-            })
-          )}
+
+          <div className="db-card db-equal">
+            <div className="db-card-head">
+              <h2>Completed</h2>
+              <small>{completed.length} finished</small>
+            </div>
+            <div className="db-card-body">
+              {completed.length === 0 ? (
+                <p className="db-empty">Finish a course to see it here. You can always reopen it.</p>
+              ) : (
+                pagedCompleted.map((course) => (
+                  <CourseRow
+                    key={`done-${course.id || course.course_id}`}
+                    course={course}
+                    crystalImg={crystal}
+                    done
+                    onOpen={openCourse}
+                  />
+                ))
+              )}
+            </div>
+            {completed.length > 0 ? (
+              <div className="db-pager">
+                <button
+                  type="button"
+                  className="db-btn ghost slim"
+                  disabled={safeCompletedPage <= 1}
+                  onClick={() => setCompletedPage((p) => Math.max(1, p - 1))}
+                >
+                  Prev
+                </button>
+                <span>
+                  Page {safeCompletedPage} of {totalCompletedPages}
+                </span>
+                <button
+                  type="button"
+                  className="db-btn ghost slim"
+                  disabled={safeCompletedPage >= totalCompletedPages}
+                  onClick={() => setCompletedPage((p) => Math.min(totalCompletedPages, p + 1))}
+                >
+                  Next
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
 
         <div className="db-side">
@@ -345,53 +403,6 @@ export default function Dashboard() {
               {rank.remaining || 0} XP until {rank.next_rank || "next rank"}
             </p>
           </div>
-        </div>
-      </section>
-
-      <section className="db-finder" id="course-search">
-        <h2>Find a course</h2>
-        <div className="db-finder-controls">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search courses"
-          />
-          <div className="db-filters">
-            {[
-              ["all", "All"],
-              ["beginner", "Basic"],
-              ["intermediate", "Intermediate"],
-              ["advanced", "Advanced"],
-            ].map(([value, label]) => (
-              <button
-                key={value}
-                className={level === value ? "active" : ""}
-                onClick={() => setLevel(value)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="db-course-grid">
-          {filtered.length === 0 ? (
-            <p className="db-empty">No courses match that search.</p>
-          ) : (
-            filtered.map((course) => (
-              <article
-                className="db-course"
-                key={course.id}
-                onClick={() => openCourse(course)}
-                style={{ cursor: "pointer" }}
-              >
-                <img src={crystal} alt="" />
-                <h3>{course.title}</h3>
-                <small>{course.level === "beginner" ? "Basic" : course.level}</small>
-                <p>{course.is_paid ? `$${course.price_usd}` : "Free"}</p>
-              </article>
-            ))
-          )}
         </div>
       </section>
     </div>

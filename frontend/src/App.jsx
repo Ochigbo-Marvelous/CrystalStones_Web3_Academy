@@ -4,6 +4,8 @@ import SignIn from "./pages/SignIn";
 import AuthCallback from "./pages/AuthCallback";
 import Dashboard from "./pages/Dashboard";
 import Courses from "./pages/Courses";
+import CoursePlayer from "./pages/CoursePlayer";
+import LessonPlayer from "./pages/LessonPlayer";
 import Mentor from "./pages/Mentor";
 import Achievements from "./pages/Achievements";
 import Profile from "./pages/Profile";
@@ -19,6 +21,8 @@ export default function App() {
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/courses" element={<Courses />} />
+      <Route path="/courses/:slug" element={<CoursePlayer />} />
+      <Route path="/courses/:slug/modules/:moduleId" element={<LessonPlayer />} />
       <Route path="/mentor" element={<Mentor />} />
       <Route path="/achievements" element={<Achievements />} />
       <Route path="/profile" element={<Profile />} />

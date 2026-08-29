@@ -70,7 +70,7 @@ export default function Navbar({ user }) {
       <div className="db-brand">
         <img src={logo} alt="" />
         <div>
-          <strong>Crystal Stones Academy</strong>
+          <strong>Crystal Web3 Academy</strong>
           <span>Forge Knowledge. Achieve Mastery.</span>
         </div>
       </div>

@@ -3,17 +3,37 @@ const fs = require("fs");
 const path = require("path");
 const pool = require("../src/config/db");
 
-const BASIC_DIR = path.join(__dirname, "..", "content", "basic");
+const CONTENT_DIRS = [
+  path.join(__dirname, "..", "content", "basic"),
+  path.join(__dirname, "..", "content", "intermediate"),
+];
+
+const lessonCount = (course) =>
+  (course.modules || []).reduce((sum, module) => sum + (module.lessons || []).length, 0);
 
 const readJsonFiles = (dir) => {
   if (!fs.existsSync(dir)) return [];
-  return fs
-    .readdirSync(dir)
-    .filter((name) => name.endsWith(".json"))
-    .map((name) => {
-      const full = path.join(dir, name);
-      return JSON.parse(fs.readFileSync(full, "utf8"));
-    });
+  const files = fs.readdirSync(dir).filter((name) => name.endsWith(".json")).sort();
+  const bySlug = new Map();
+
+  for (const name of files) {
+    const full = path.join(dir, name);
+    const course = JSON.parse(fs.readFileSync(full, "utf8"));
+    const count = lessonCount(course);
+    console.log(`Reading ${name} → ${course.slug || "NO SLUG"} (${count} lessons)`);
+    if (!course.slug) continue;
+
+    const previous = bySlug.get(course.slug);
+    if (!previous || count > previous._lessonCount) {
+      course._lessonCount = count;
+      course._file = name;
+      bySlug.set(course.slug, course);
+    } else {
+      console.log(`Ignoring ${name}; ${previous._file} has more lessons for ${course.slug}`);
+    }
+  }
+
+  return [...bySlug.values()];
 };
 
 const seedCourse = async (course) => {
@@ -66,11 +86,14 @@ const seedCourse = async (course) => {
     courseId = result.insertId;
   }
 
+  let lessonTotal = 0;
+  let quizTotal = 0;
+
   for (const module of course.modules) {
     const [moduleResult] = await pool.query(
       `INSERT INTO modules (course_id, title, description, order_index)
        VALUES (?, ?, ?, ?)`,
-      [courseId, module.title, module.title, module.order_index]
+      [courseId, module.title, module.description || module.title, module.order_index]
     );
     const moduleId = moduleResult.insertId;
 
@@ -87,6 +110,7 @@ const seedCourse = async (course) => {
           lesson.duration_minutes || 0,
         ]
       );
+      lessonTotal += 1;
     }
 
     for (const item of module.quiz || []) {
@@ -105,16 +129,29 @@ const seedCourse = async (course) => {
           item.order_index,
         ]
       );
+      quizTotal += 1;
     }
   }
 
-  console.log(`Seeded: ${course.title}`);
+  console.log(`Seeded: ${course.title} from ${course._file} (${lessonTotal} lessons, ${quizTotal} quiz questions)`);
 };
 
 const run = async () => {
-  const courses = readJsonFiles(BASIC_DIR);
+  await pool.query("ALTER TABLE lessons MODIFY content MEDIUMTEXT NOT NULL");
+
+  const bySlug = new Map();
+  for (const dir of CONTENT_DIRS) {
+    for (const course of readJsonFiles(dir)) {
+      const previous = bySlug.get(course.slug);
+      if (!previous || course._lessonCount > previous._lessonCount) {
+        bySlug.set(course.slug, course);
+      }
+    }
+  }
+
+  const courses = [...bySlug.values()];
   if (courses.length === 0) {
-    throw new Error("No JSON files found in backend/content/basic");
+    throw new Error("No JSON files found in backend/content/basic or backend/content/intermediate");
   }
 
   for (const course of courses) {

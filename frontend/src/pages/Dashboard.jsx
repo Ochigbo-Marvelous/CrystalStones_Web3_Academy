@@ -1,18 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
-import crystal from "../assets/brand/hero-crystal.png";
+import crystalBasic from "../assets/brand/crystal-basic-blue.png";
+import crystalIntermediate from "../assets/brand/crystal-intermediate-red.png";
+import crystalAdvanced from "../assets/brand/crystal-advanced-green.png";
 import mentorCrystal from "../assets/brand/crystal-hero.png";
 import iconBook from "../assets/brand/icon-book.png";
 import iconClock from "../assets/brand/icon-clock.png";
 import iconCert from "../assets/brand/icon-cert.png";
 import { rankImage } from "../lib/rankAssets";
+import {
+  isBadMentorLine,
+  readMentorThread,
+  writeMentorThread,
+} from "../lib/mentorStorage";
 import "../styles/dashboard.css";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5001";
-const MENTOR_KEY = "mentor_thread";
 const COMPLETED_PER_PAGE = 3;
 const COMPLETED_MAX_PAGES = 100;
+
+const crystalForLevel = (level) => {
+  if (level === "intermediate") return crystalIntermediate;
+  if (level === "advanced") return crystalAdvanced;
+  return crystalBasic;
+};
 
 const formatTime = (mins = 0) => {
   const n = Number(mins) || 0;
@@ -21,48 +33,60 @@ const formatTime = (mins = 0) => {
   return h ? `${h}h ${m}m` : `${m}m`;
 };
 
-const isBadMentorLine = (text = "") =>
-  /route\s+\/api\/mentor|not found|stack|sql|token failed/i.test(String(text));
-
-const readThread = () => {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(MENTOR_KEY) || "[]");
-    if (!Array.isArray(parsed)) return [];
-    const cleaned = parsed.filter((item) => item && item.text && !isBadMentorLine(item.text));
-    if (cleaned.length !== parsed.length) {
-      localStorage.setItem(MENTOR_KEY, JSON.stringify(cleaned));
-    }
-    return cleaned;
-  } catch {
-    return [];
-  }
+const formatDays = (days = 0) => {
+  const n = Number(days) || 0;
+  return `${n} day${n === 1 ? "" : "s"}`;
 };
 
 function Skeleton() {
   return (
     <div className="db sk-screen">
-      <div className="sk sk-nav" />
-      <div className="sk sk-hero" />
-      <div className="sk-stats">
+      <header className="sk-nav-row">
+        <span className="sk sk-brand" />
+        <span className="sk sk-pills" />
+        <span className="sk sk-user" />
+      </header>
+
+      <section className="sk-hero-row">
+        <div className="sk-hero-copy">
+          <span className="sk sk-title" />
+          <span className="sk sk-sub" />
+          <div className="sk-hero-actions">
+            <span className="sk sk-btn" />
+            <span className="sk sk-btn" />
+          </div>
+        </div>
+        <span className="sk sk-crystal" />
+        <span className="sk sk-streak" />
+      </section>
+
+      <section className="sk-stats">
         <span className="sk" />
         <span className="sk" />
         <span className="sk" />
         <span className="sk" />
         <span className="sk" />
-      </div>
-      <div className="sk-main">
-        <span className="sk" />
-        <span className="sk" />
-      </div>
+      </section>
+
+      <section className="sk-main">
+        <div className="sk-left">
+          <span className="sk sk-card" />
+          <span className="sk sk-card" />
+        </div>
+        <div className="sk-right">
+          <span className="sk sk-mentor" />
+          <span className="sk sk-rank" />
+        </div>
+      </section>
     </div>
   );
 }
 
-function CourseRow({ course, crystalImg, done, onOpen }) {
+function CourseRow({ course, done, onOpen }) {
   const pct = done ? 100 : Math.round(course.progress_percent || 0);
   return (
     <div className="db-progress-row">
-      <img src={course.thumbnail || crystalImg} alt="" />
+      <img src={course.thumbnail || crystalForLevel(course.level)} alt="" />
       <div>
         <b>{course.title}</b>
         <small>{course.level === "beginner" ? "Basic" : course.level}</small>
@@ -87,7 +111,7 @@ export default function Dashboard() {
   const [ready, setReady] = useState(false);
   const [mentorInput, setMentorInput] = useState("");
   const [mentorBusy, setMentorBusy] = useState(false);
-  const [thread, setThread] = useState(readThread);
+  const [thread, setThread] = useState([]);
   const [completedPage, setCompletedPage] = useState(1);
 
   useEffect(() => {
@@ -107,6 +131,7 @@ export default function Dashboard() {
         setData(dash.data);
         if (dash.data?.user) {
           localStorage.setItem("user", JSON.stringify(dash.data.user));
+          setThread(readMentorThread(dash.data.user.id));
         }
       })
       .catch((err) => {
@@ -123,18 +148,20 @@ export default function Dashboard() {
       });
   }, [navigate]);
 
+  const userId = data?.user?.id;
+
   const saveThread = (next) => {
     const clipped = next
       .filter((item) => item && item.text && !isBadMentorLine(item.text))
       .slice(-40);
-    localStorage.setItem(MENTOR_KEY, JSON.stringify(clipped));
+    writeMentorThread(userId, clipped);
     setThread(clipped);
   };
 
   const askMentor = async (event) => {
     event.preventDefault();
     const question = mentorInput.trim().slice(0, 500);
-    if (!question || mentorBusy) return;
+    if (!question || mentorBusy || !userId) return;
 
     const token = localStorage.getItem("token");
     if (!token) {
@@ -171,6 +198,7 @@ export default function Dashboard() {
   };
 
   const completed = useMemo(() => data?.completed || [], [data]);
+  const inProgress = useMemo(() => data?.in_progress || [], [data]);
   const totalCompletedPages = useMemo(() => {
     const pages = Math.ceil(completed.length / COMPLETED_PER_PAGE);
     return Math.min(COMPLETED_MAX_PAGES, Math.max(1, pages || 1));
@@ -187,7 +215,6 @@ export default function Dashboard() {
 
   const user = data?.user || {};
   const stats = data?.stats || {};
-  const inProgress = data?.in_progress || [];
   const rank = data?.rank_progress || {};
   const displayRank = rank.rank || user.current_rank || "Novice";
   const crystalId = user.username || "Learner";
@@ -226,11 +253,11 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <img className="db-hero-crystal" src={crystal} alt="" />
+        <img className="db-hero-crystal" src={crystalBasic} alt="" />
 
         <aside className="db-streak">
           <div className="db-streak-top">Fire Streak</div>
-          <strong>{stats.current_streak || 0} days</strong>
+          <strong>{formatDays(stats.current_streak)}</strong>
           <small>Keep the streak alive!</small>
         </aside>
       </section>
@@ -291,14 +318,14 @@ export default function Dashboard() {
           <div>
             <small>Certificates</small>
             <b>{stats.certificates_earned || 0}</b>
-            <em>Earned</em>
+            <em>Track certs</em>
           </div>
         </article>
       </section>
 
       <section className="db-main">
         <div className="db-left">
-          <div className="db-card db-equal">
+          <div className="db-card db-equal db-progress-card">
             <div className="db-card-head">
               <h2>In Progress</h2>
               <button className="db-link" type="button" onClick={() => navigate("/courses")}>
@@ -313,7 +340,6 @@ export default function Dashboard() {
                   <CourseRow
                     key={course.id || course.course_id}
                     course={course}
-                    crystalImg={crystal}
                     onOpen={openCourse}
                   />
                 ))
@@ -321,7 +347,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="db-card db-equal">
+          <div className="db-card db-equal db-completed-card">
             <div className="db-card-head">
               <h2>Completed</h2>
               <small>{completed.length} finished</small>
@@ -334,7 +360,6 @@ export default function Dashboard() {
                   <CourseRow
                     key={`done-${course.id || course.course_id}`}
                     course={course}
-                    crystalImg={crystal}
                     done
                     onOpen={openCourse}
                   />
@@ -384,7 +409,7 @@ export default function Dashboard() {
                 <p className="db-chat-empty">Your conversation will appear here.</p>
               ) : (
                 thread.slice(-8).map((item) => (
-                  <div key={`${item.role}-${item.at}`} className={`db-bubble ${item.role}`}>
+                  <div key={`${item.role}-${item.at}-${item.text}`} className={`db-bubble ${item.role}`}>
                     {item.text}
                   </div>
                 ))

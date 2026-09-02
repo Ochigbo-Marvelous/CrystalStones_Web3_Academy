@@ -1,6 +1,9 @@
+const crypto = require("crypto");
 const pool = require("../config/db");
 const ApiError = require("../utils/ApiError");
 const achievementService = require("./achievement.service");
+const securityLogger = require("../utils/securityLogger");
+const { TRACKS } = require("../config/tracks");
 const { RANK_ORDER, buildRankProgress } = require("../config/ranks");
 
 const submitQuiz = async (userId, moduleId, answers) => {
@@ -150,21 +153,94 @@ const recalculateCourseProgress = async (userId, courseId) => {
   }
 };
 
+const maybeIssueTrackCertificate = async (userId, level) => {
+  const track = TRACKS[level];
+  if (!track || !Array.isArray(track.requiredSlugs) || track.requiredSlugs.length === 0) {
+    return null;
+  }
+
+  const [courses] = await pool.query(
+    `SELECT id, title, slug, is_published
+     FROM courses
+     WHERE slug IN (?)`,
+    [track.requiredSlugs]
+  );
+
+  if (courses.length !== track.requiredSlugs.length) return null;
+  if (courses.some((course) => !course.is_published)) return null;
+
+  const ids = courses.map((course) => course.id);
+  const [done] = await pool.query(
+    `SELECT COUNT(*) AS count
+     FROM enrollments
+     WHERE user_id = ?
+       AND course_id IN (?)
+       AND (status = 'completed' OR progress_percent >= 100)`,
+    [userId, ids]
+  );
+
+  if (Number(done[0].count) < ids.length) return null;
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const [existing] = await connection.query(
+      "SELECT id FROM certificates WHERE user_id = ? AND level = ? LIMIT 1 FOR UPDATE",
+      [userId, track.key]
+    );
+
+    if (existing.length > 0) {
+      await connection.commit();
+      return existing[0];
+    }
+
+    const snapshot = JSON.stringify({
+      level: track.key,
+      title: track.title,
+      courses: courses.map((course) => ({
+        id: course.id,
+        title: course.title,
+        slug: course.slug,
+      })),
+    });
+
+    const certificateCode = `CSA-${String(track.key).toUpperCase()}-${userId}-${crypto
+      .randomBytes(3)
+      .toString("hex")
+      .toUpperCase()}`;
+
+    const [result] = await connection.query(
+      `INSERT INTO certificates (user_id, course_id, level, certificate_code, course_snapshot)
+       VALUES (?, NULL, ?, ?, ?)`,
+      [userId, track.key, certificateCode, snapshot]
+    );
+
+    await connection.commit();
+
+    await securityLogger("TRACK_CERTIFICATE_ISSUED", {
+      userId,
+      level: track.key,
+      certificateCode,
+    });
+
+    return { id: result.insertId, certificate_code: certificateCode, level: track.key };
+  } catch (error) {
+    await connection.rollback();
+    if (error.code === "ER_DUP_ENTRY") return null;
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
 const issueCertificate = async (userId, courseId) => {
-  const [existing] = await pool.query(
-    "SELECT id FROM certificates WHERE user_id = ? AND course_id = ? LIMIT 1",
-    [userId, courseId]
+  const [rows] = await pool.query(
+    "SELECT level FROM courses WHERE id = ? LIMIT 1",
+    [courseId]
   );
-
-  if (existing.length > 0) return;
-
-  const certificateCode = `CSA-${userId}-${courseId}-${Date.now().toString().slice(-6)}`;
-
-  await pool.query(
-    `INSERT INTO certificates (user_id, course_id, certificate_code)
-     VALUES (?, ?, ?)`,
-    [userId, courseId, certificateCode]
-  );
+  if (rows.length === 0) return null;
+  return maybeIssueTrackCertificate(userId, rows[0].level);
 };
 
 const getModuleProgress = async (userId, moduleId) => {
@@ -261,6 +337,7 @@ module.exports = {
   getModuleProgress,
   recalculateCourseProgress,
   issueCertificate,
+  maybeIssueTrackCertificate,
   updateUserRank,
   recordStudyActivity,
   RANK_ORDER,

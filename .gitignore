@@ -1,10 +1,8 @@
-node_modules/
+﻿node_modules/
 .env
-backend/.env
-frontend/.env
+.env.*
+!.env.example
 dist/
 build/
 .DS_Store
 *.log
-uploads/avatars/*
-!uploads/avatars/.gitkeep

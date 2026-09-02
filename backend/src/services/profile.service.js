@@ -73,18 +73,36 @@ const changePassword = async (userId, currentPassword, newPassword) => {
   return { message: "Password updated successfully" };
 };
 
+const parseSnapshot = (value) => {
+  if (!value) return {};
+  if (typeof value === "object") return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return {};
+  }
+};
+
 const getCertificates = async (userId) => {
   const [certificates] = await pool.query(
-    `SELECT c.id, c.certificate_code, c.issued_at,
-            co.title AS course_title, co.slug AS course_slug
-     FROM certificates c
-     JOIN courses co ON c.course_id = co.id
-     WHERE c.user_id = ?
-     ORDER BY c.issued_at DESC`,
+    `SELECT id, certificate_code, issued_at, level, course_snapshot
+     FROM certificates
+     WHERE user_id = ?
+     ORDER BY issued_at DESC`,
     [userId]
   );
 
-  return certificates;
+  return certificates.map((row) => {
+    const snapshot = parseSnapshot(row.course_snapshot);
+    return {
+      id: row.id,
+      certificate_code: row.certificate_code,
+      issued_at: row.issued_at,
+      level: row.level || snapshot.level || null,
+      title: snapshot.title || "Track certificate",
+      courses: Array.isArray(snapshot.courses) ? snapshot.courses : [],
+    };
+  });
 };
 
 const sendEmailChangeCode = async (userId, email) => {

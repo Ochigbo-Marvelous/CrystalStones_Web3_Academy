@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import { avatarSrc } from "../lib/avatarUrl";
@@ -14,12 +14,50 @@ const persistUser = (next) => {
 function Skeleton() {
   return (
     <div className="db sk-screen">
-      <div className="sk sk-nav" />
-      <div className="sk sk-hero" />
-      <div className="sk-main">
-        <span className="sk" />
-        <span className="sk" />
-      </div>
+      <header className="sk-nav-row">
+        <span className="sk sk-brand" />
+        <span className="sk sk-pills" />
+        <span className="sk sk-user" />
+      </header>
+
+      <section className="pf-page">
+        <span className="sk pf-sk-title" />
+        <div className="pf-board">
+          <div className="pf-card pf-sk-card">
+            <span className="sk pf-sk-h" />
+            <div className="pf-ident">
+              <span className="sk pf-sk-face" />
+              <div>
+                <span className="sk pf-sk-line" />
+                <span className="sk pf-sk-line is-short" />
+              </div>
+            </div>
+            <span className="sk pf-sk-input" />
+            <span className="sk pf-sk-input" />
+            <span className="sk pf-sk-btn" />
+          </div>
+          <div className="pf-card pf-sk-card">
+            <span className="sk pf-sk-h" />
+            <span className="sk pf-sk-input" />
+            <span className="sk pf-sk-input" />
+            <span className="sk pf-sk-btn" />
+          </div>
+          <div className="pf-card pf-sk-card">
+            <span className="sk pf-sk-h" />
+            <span className="sk pf-sk-input" />
+            <span className="sk pf-sk-input" />
+            <span className="sk pf-sk-input" />
+            <span className="sk pf-sk-btn" />
+          </div>
+          <div className="pf-card pf-sk-card">
+            <span className="sk pf-sk-h" />
+            <span className="sk pf-sk-line" />
+            <span className="sk pf-sk-input" />
+            <span className="sk pf-sk-input" />
+            <span className="sk pf-sk-btn is-danger" />
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
@@ -36,9 +74,9 @@ export default function Profile() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState("");
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [toast, setToast] = useState(null);
   const [busy, setBusy] = useState("");
 
   const token = () => localStorage.getItem("token");
@@ -48,6 +86,16 @@ export default function Profile() {
     if (json) headers["Content-Type"] = "application/json";
     return headers;
   };
+
+  const showToast = (text, type = "ok") => {
+    setToast({ text, type });
+  };
+
+  useEffect(() => {
+    if (!toast) return undefined;
+    const timer = window.setTimeout(() => setToast(null), 2800);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
 
   const applyUser = (next) => {
     if (!next) return;
@@ -81,24 +129,21 @@ export default function Profile() {
           navigate("/signin", { replace: true });
           return;
         }
-        setError(err.message || "Could not load profile");
+        showToast(err.message || "Could not load profile", "err");
       })
       .finally(() => {
-        const wait = Math.max(0, 700 - (Date.now() - started));
+        const wait = Math.max(0, 1000 - (Date.now() - started));
         setTimeout(() => setReady(true), wait);
       });
   }, [navigate]);
 
-  const passwordRules = useMemo(() => {
-    const p = newPassword;
-    return [
-      { id: "len", label: "8+ characters", ok: p.length >= 8 },
-      { id: "case", label: "Upper and lowercase", ok: /[a-z]/.test(p) && /[A-Z]/.test(p) },
-      { id: "num", label: "At least one number", ok: /\d/.test(p) },
-      { id: "sym", label: "At least one symbol", ok: /[^A-Za-z0-9]/.test(p) },
-      { id: "match", label: "Passwords match", ok: p.length > 0 && p === confirm },
-    ];
-  }, [newPassword, confirm]);
+  const passwordOk =
+    newPassword.length >= 8 &&
+    /[a-z]/.test(newPassword) &&
+    /[A-Z]/.test(newPassword) &&
+    /\d/.test(newPassword) &&
+    /[^A-Za-z0-9]/.test(newPassword) &&
+    newPassword === confirm;
 
   const startCooldown = () => {
     setCooldown(60);
@@ -115,12 +160,10 @@ export default function Profile() {
 
   const run = async (key, fn) => {
     setBusy(key);
-    setError("");
-    setMessage("");
     try {
       await fn();
     } catch (err) {
-      setError(err.message || "Request failed");
+      showToast(err.message || "Request failed", "err");
     } finally {
       setBusy("");
     }
@@ -141,7 +184,7 @@ export default function Profile() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || "Avatar upload failed");
       applyUser({ ...user, avatar: data.data.avatar });
-      setMessage("Avatar updated");
+      showToast("Avatar updated");
     });
   };
 
@@ -159,7 +202,7 @@ export default function Profile() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Update failed");
       applyUser(data.data);
-      setMessage("Profile updated");
+      showToast("Profile updated");
     });
   };
 
@@ -172,7 +215,7 @@ export default function Profile() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Could not send code");
-      setMessage(data.message || "Code sent");
+      showToast(data.message || "Code sent");
       startCooldown();
     });
   };
@@ -189,14 +232,14 @@ export default function Profile() {
       if (!res.ok) throw new Error(data.message || "Could not change email");
       applyUser(data.data);
       setCode("");
-      setMessage("Email updated");
+      showToast("Email updated");
     });
   };
 
   const savePassword = (e) => {
     e.preventDefault();
-    if (!passwordRules.every((rule) => rule.ok)) {
-      setError("Password does not meet the required pattern");
+    if (!passwordOk) {
+      showToast("Password does not meet the required pattern", "err");
       return;
     }
     run("password", async () => {
@@ -214,22 +257,8 @@ export default function Profile() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirm("");
-      setMessage("Password updated");
+      showToast("Password updated");
     });
-  };
-
-  const logout = async () => {
-    try {
-      await fetch(`${API}/api/auth/logout`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token()}` },
-      });
-    } catch {
-      // still clear local session
-    }
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    navigate("/signin", { replace: true });
   };
 
   const deleteAccount = (e) => {
@@ -239,7 +268,7 @@ export default function Profile() {
         method: "DELETE",
         headers: authHeaders(),
         body: JSON.stringify({
-          password: currentPassword,
+          password: deletePassword,
           confirm: deleteConfirm,
         }),
       });
@@ -256,124 +285,123 @@ export default function Profile() {
   const photo = avatarSrc(user?.avatar);
   const hasPassword = Boolean(user?.has_password);
   const crystalId = user?.username || "Learner";
+  const initial = (crystalId || "U").slice(0, 1).toUpperCase();
 
   return (
     <div className="db">
       <Navbar user={user} />
 
-      <section className="pf-hero">
-        <div>
-          <h1>Profile</h1>
-          <p>Manage your Crystal ID, photo, and account security.</p>
-        </div>
-        <div className="pf-id">
-          <small>Crystal ID</small>
-          <b>@{crystalId}</b>
-        </div>
-      </section>
+      {toast ? <div className={`pf-toast ${toast.type}`}>{toast.text}</div> : null}
 
-      {error ? <p className="pf-banner is-error">{error}</p> : null}
-      {message ? <p className="pf-banner">{message}</p> : null}
+      <section className="pf-page">
+        <h1>Profile</h1>
 
-      <section className="pf-grid">
-        <form className="db-card pf-card" onSubmit={saveProfile}>
-          <div className="pf-avatar">
-            <div className="db-avatar pf-avatar-img">
-              {photo ? <img src={photo} alt="" /> : (crystalId || "U").slice(0, 1).toUpperCase()}
+        <div className="pf-board">
+          <form className="pf-card" onSubmit={saveProfile}>
+            <h2>Identity</h2>
+            <div className="pf-ident">
+              <div className="pf-face">{photo ? <img src={photo} alt="" /> : initial}</div>
+              <div>
+                <b>{fullName || crystalId}</b>
+                <small>@{crystalId}</small>
+                <label className="pf-photo">
+                  {busy === "avatar" ? "Uploading..." : "Change photo"}
+                  <input type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={onAvatar} />
+                </label>
+              </div>
             </div>
-            <label className="db-btn ghost slim">
-              {busy === "avatar" ? "Uploading..." : "Change photo"}
-              <input type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={onAvatar} />
+            <label>
+              Full name
+              <input value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={100} />
             </label>
-          </div>
-
-          <label>Full name</label>
-          <input value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={100} />
-
-          <label>Crystal ID / username</label>
-          <input value={username} onChange={(e) => setUsername(e.target.value)} maxLength={24} />
-          <small>This is the name shown on your dashboard.</small>
-
-          <button className="db-btn" type="submit" disabled={busy === "profile"}>
-            {busy === "profile" ? "Saving..." : "Save profile"}
-          </button>
-        </form>
-
-        <form className="db-card pf-card" onSubmit={saveEmail}>
-          <h2>Email</h2>
-          <label>Email address</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <div className="pf-row">
-            <input
-              inputMode="numeric"
-              maxLength={6}
-              placeholder="6-digit code"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-            />
-            <button
-              type="button"
-              className="db-btn ghost slim"
-              onClick={sendEmailCode}
-              disabled={busy === "email-code" || cooldown > 0}
-            >
-              {cooldown > 0 ? `${cooldown}s` : busy === "email-code" ? "Sending" : "Get code"}
-            </button>
-          </div>
-          <button className="db-btn" type="submit" disabled={busy === "email"}>
-            {busy === "email" ? "Saving..." : "Update email"}
-          </button>
-        </form>
-
-        {hasPassword ? (
-          <form className="db-card pf-card" onSubmit={savePassword}>
-            <h2>Password</h2>
-            <label>Current password</label>
-            <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
-            <label>New password</label>
-            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-            <label>Confirm password</label>
-            <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
-            <div className="pf-rules">
-              {passwordRules.map((rule) => (
-                <span key={rule.id} className={rule.ok ? "ok" : ""}>
-                  {rule.ok ? "✓" : "○"} {rule.label}
-                </span>
-              ))}
-            </div>
-            <button className="db-btn" type="submit" disabled={busy === "password"}>
-              {busy === "password" ? "Saving..." : "Update password"}
+            <label>
+              Crystal ID
+              <input value={username} onChange={(e) => setUsername(e.target.value)} maxLength={24} />
+            </label>
+            <button className="pf-btn" type="submit" disabled={busy === "profile"}>
+              {busy === "profile" ? "Saving..." : "Save profile"}
             </button>
           </form>
-        ) : (
-          <div className="db-card pf-card">
-            <h2>Password</h2>
-            <p>This account uses GitHub sign-in, so there is no password to change.</p>
-          </div>
-        )}
 
-        <form className="db-card pf-card pf-danger" onSubmit={deleteAccount}>
-          <h2>Danger zone</h2>
-          <p>Permanently delete your account and learning progress. This cannot be undone.</p>
+          <form className="pf-card" onSubmit={saveEmail}>
+            <h2>Email</h2>
+            <label>
+              Email
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            </label>
+            <label>
+              Code
+              <span className="pf-code">
+                <input
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="6-digit code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="pf-btn ghost"
+                  onClick={sendEmailCode}
+                  disabled={busy === "email-code" || cooldown > 0}
+                >
+                  {cooldown > 0 ? `${cooldown}s` : "Get code"}
+                </button>
+              </span>
+            </label>
+            <button className="pf-btn" type="submit" disabled={busy === "email"}>
+              {busy === "email" ? "Saving..." : "Update email"}
+            </button>
+          </form>
+
           {hasPassword ? (
-            <>
-              <label>Current password</label>
-              <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
-            </>
-          ) : null}
-          <label>Type DELETE to confirm</label>
-          <input value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)} />
-          <button className="db-btn" type="submit" disabled={busy === "delete" || deleteConfirm !== "DELETE"}>
-            {busy === "delete" ? "Deleting..." : "Delete account"}
-          </button>
-          <button className="db-btn ghost" type="button" onClick={logout}>
-            Log out
-          </button>
-        </form>
+            <form className="pf-card" onSubmit={savePassword}>
+              <h2>Password</h2>
+              <label>
+                Current password
+                <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+              </label>
+              <label>
+                New password
+                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+              </label>
+              <label>
+                Confirm password
+                <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+              </label>
+              <button className="pf-btn" type="submit" disabled={busy === "password"}>
+                {busy === "password" ? "Saving..." : "Update password"}
+              </button>
+            </form>
+          ) : (
+            <div className="pf-card">
+              <h2>Password</h2>
+              <p>This account uses GitHub sign-in, so there is no password to change.</p>
+            </div>
+          )}
+
+          <form className="pf-card pf-danger" onSubmit={deleteAccount}>
+            <h2>Delete account</h2>
+            <p>This removes your progress permanently. Type DELETE to confirm.</p>
+            {hasPassword ? (
+              <label>
+                Current password
+                <input type="password" value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)} />
+              </label>
+            ) : null}
+            <label>
+              Confirmation
+              <input
+                placeholder="Type DELETE"
+                value={deleteConfirm}
+                onChange={(e) => setDeleteConfirm(e.target.value)}
+              />
+            </label>
+            <button className="pf-btn danger" type="submit" disabled={busy === "delete" || deleteConfirm !== "DELETE"}>
+              {busy === "delete" ? "Deleting..." : "Delete account"}
+            </button>
+          </form>
+        </div>
       </section>
     </div>
   );

@@ -27,6 +27,7 @@ export default function App() {
       <Route path="/achievements" element={<Achievements />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/checkout/intermediate" element={<Checkout />} />
       <Route path="/checkout/:courseId" element={<Checkout />} />
     </Routes>
   );

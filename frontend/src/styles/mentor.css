@@ -1,0 +1,217 @@
+.mn-page {
+  width: 100%;
+  padding: 16px 36px 36px;
+  box-sizing: border-box;
+}
+
+.mn-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.mn-hero img,
+.mn-sk-crystal {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  flex: 0 0 72px;
+}
+
+.mn-hero h1 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.mn-hero p {
+  margin: 6px 0 0;
+  color: #9aa8bd;
+  font-size: 13px;
+  max-width: 640px;
+}
+
+.mn-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.mn-chips button {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 59, 59, 0.22);
+  border-radius: 999px;
+  background: #10192a;
+  color: #d5deec;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mn-chips button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mn-error {
+  margin: 0 0 12px;
+  color: #ffd0d0;
+  font-size: 13px;
+}
+
+.mn-shell {
+  min-height: 520px;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  background:
+    linear-gradient(180deg, rgba(28, 46, 78, 0.55), rgba(10, 16, 28, 0.96)),
+    #10192a;
+  border: 1px solid rgba(255, 59, 59, 0.28);
+  border-radius: 22px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+    0 12px 28px rgba(255, 59, 59, 0.18);
+  overflow: hidden;
+}
+
+.mn-chat {
+  min-height: 360px;
+  max-height: 58dvh;
+  overflow: auto;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mn-empty {
+  margin: auto;
+  text-align: center;
+  color: #9aa8bd;
+}
+
+.mn-empty b {
+  display: block;
+  color: #f4f7ff;
+  margin-bottom: 6px;
+}
+
+.mn-bubble {
+  max-width: min(640px, 82%);
+  padding: 10px 14px;
+  border-radius: 16px;
+  line-height: 1.5;
+  font-size: 14px;
+  white-space: pre-wrap;
+}
+
+.mn-bubble.mentor {
+  align-self: flex-start;
+  background: #122036;
+  border: 1px solid #24344d;
+  color: #d7e6ff;
+}
+
+.mn-bubble.user {
+  align-self: flex-end;
+  background: #16325c;
+  color: #fff;
+}
+
+.mn-bubble.is-typing {
+  opacity: 0.75;
+}
+
+.mn-composer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid #22385a;
+}
+
+.mn-composer input {
+  height: 44px;
+  border: 1px solid #24344d;
+  border-radius: 12px;
+  background: #0b1220;
+  color: #f4f7ff;
+  padding: 0 14px;
+  font: inherit;
+}
+
+.mn-composer button {
+  height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 12px;
+  background: #2f6bff;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mn-composer button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mn-sk-title {
+  width: 240px;
+  height: 32px;
+  display: block;
+}
+
+.mn-sk-sub {
+  width: 320px;
+  height: 14px;
+  display: block;
+  margin-top: 8px;
+}
+
+.mn-sk-bubble {
+  width: min(420px, 70%);
+  height: 48px;
+  border-radius: 16px;
+}
+
+.mn-sk-bubble.is-user {
+  width: min(280px, 50%);
+  align-self: flex-end;
+  margin-left: auto;
+}
+
+.mn-sk-input {
+  height: 44px;
+  border-radius: 12px;
+}
+
+.mn-sk-send {
+  width: 72px;
+  height: 44px;
+  border-radius: 12px;
+}
+
+@media (max-width: 900px) {
+  .mn-page {
+    padding: 12px 16px 28px;
+  }
+
+  .mn-hero h1 {
+    font-size: 24px;
+  }
+
+  .mn-shell {
+    min-height: 460px;
+  }
+
+  .mn-chat {
+    max-height: 52dvh;
+  }
+}

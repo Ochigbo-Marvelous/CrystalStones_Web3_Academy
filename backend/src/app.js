@@ -1,3 +1,4 @@
+const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const cors = require("cors");
@@ -23,15 +24,22 @@ const mentorRoutes = require("./routes/mentor.routes");
 const paymentRoutes = require("./routes/payment.routes");
 
 const app = express();
+const serveFrontend = process.env.SERVE_FRONTEND === "true";
 
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
   })
 );
+
 app.use(
   cors({
-    origin: config.frontendUrl,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (origin === config.frontendUrl) return callback(null, true);
+      if (serveFrontend) return callback(null, origin);
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );
@@ -70,11 +78,23 @@ const emailLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+const mentorIpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: config.nodeEnv === "development" ? 80 : 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many mentor requests from this network. Try again later.",
+  },
+});
+
 app.use("/api", apiLimiter);
 app.use("/api/auth/login", authLimiter);
 app.use("/api/auth/signup", authLimiter);
 app.use("/api/auth/email/send-code", emailLimiter);
 app.use("/api/auth/password/forgot", emailLimiter);
+app.use("/api/mentor", mentorIpLimiter);
 
 app.use(cookieParser());
 app.use(
@@ -118,6 +138,22 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/achievements", achievementRoutes);
 app.use("/api/mentor", mentorRoutes);
 app.use("/api/payments", paymentRoutes);
+
+if (serveFrontend) {
+  const frontendDist = path.join(__dirname, "../../frontend/dist");
+  const indexFile = path.join(frontendDist, "index.html");
+
+  if (!fs.existsSync(indexFile)) {
+    console.warn("SERVE_FRONTEND=true but frontend/dist is missing. Run npm run build in frontend.");
+  } else {
+    app.use(express.static(frontendDist));
+    app.use((req, res, next) => {
+      if (req.method !== "GET" && req.method !== "HEAD") return next();
+      if (req.path.startsWith("/api") || req.path.startsWith("/uploads")) return next();
+      res.sendFile(indexFile);
+    });
+  }
+}
 
 app.use((req, res, next) => {
   res.status(404).json({

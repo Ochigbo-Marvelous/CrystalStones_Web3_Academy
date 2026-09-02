@@ -1,12 +1,50 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "./Navbar";
-import crystal01 from "../assets/brand/crystal-01-blue.png";
+import crystalBasic from "../assets/brand/crystal-basic-blue.png";
+import crystalIntermediate from "../assets/brand/crystal-intermediate-gold.png";
+import crystalAdvanced from "../assets/brand/crystal-advanced-green.png";
 import "../styles/dashboard.css";
 import "../styles/courses.css";
 import "../styles/course-player.css";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5001";
+
+const CRYSTAL_BY_LEVEL = {
+  beginner: crystalBasic,
+  intermediate: crystalIntermediate,
+  advanced: crystalAdvanced,
+};
+
+const TRACK_ORDER = {
+  beginner: [
+    "crypto-foundations",
+    "wallets-keys-self-custody",
+    "exchanges-first-buy",
+    "bnb-smart-chain-beginners",
+    "crypto-safety-scams",
+  ],
+  intermediate: [
+    "ethereum-smart-contracts",
+    "defi-decentralized-finance",
+    "tokenomics",
+    "trading-markets",
+    "nfts-digital-assets",
+    "daos-governance",
+    "rwa-specialization",
+    "crystal-stones-ecosystem",
+  ],
+  advanced: [
+    "web3-architecture",
+    "security-specialization",
+    "on-chain-research",
+    "regulation-industry",
+    "build-your-own-token",
+    "practical-capstone",
+  ],
+};
+
+const crystalFor = (course) => CRYSTAL_BY_LEVEL[course?.level] || crystalBasic;
 
 const isDone = (row) => {
   if (!row) return false;
@@ -14,6 +52,64 @@ const isDone = (row) => {
   if (row.status === "completed" || row.status === "passed") return true;
   return Number(row.score || 0) >= 70;
 };
+
+const courseDoneKey = (courseId) => `csa_course_done_${courseId}`;
+
+const readCourseDone = (courseId) => {
+  try {
+    return localStorage.getItem(courseDoneKey(courseId)) === "1";
+  } catch {
+    return false;
+  }
+};
+
+const markCourseDone = (courseId) => {
+  if (!courseId) return;
+  try {
+    localStorage.setItem(courseDoneKey(courseId), "1");
+  } catch {
+    /* ignore */
+  }
+};
+
+const enrollmentLooksDone = (row) => {
+  if (!row) return false;
+  if (row.status === "completed" || row.status === "passed") return true;
+  return Number(row.progress_percent || 0) >= 100;
+};
+
+async function courseIsFinished(course, enrollment, headers) {
+  if (!course?.id) return false;
+  if (readCourseDone(course.id) || enrollmentLooksDone(enrollment)) {
+    markCourseDone(course.id);
+    return true;
+  }
+
+  try {
+    const modsRes = await fetch(`${API}/api/modules/course/${course.id}`, { headers });
+    const modsJson = await modsRes.json();
+    const mods = modsJson.data || [];
+    if (!mods.length) return false;
+
+    const flags = await Promise.all(
+      mods.map(async (mod) => {
+        try {
+          const res = await fetch(`${API}/api/progress/module/${mod.id}`, { headers });
+          const json = await res.json();
+          return isDone(json.data);
+        } catch {
+          return false;
+        }
+      })
+    );
+
+    const allDone = flags.length > 0 && flags.every(Boolean);
+    if (allDone) markCourseDone(course.id);
+    return allDone;
+  } catch {
+    return false;
+  }
+}
 
 function IconLock() {
   return (
@@ -41,13 +137,78 @@ function IconPlay() {
 function Skeleton() {
   return (
     <div className="db sk-screen">
-      <div className="sk sk-nav" />
-      <div className="sk sk-hero" />
-      <div className="sk-main">
-        <span className="sk" />
-        <span className="sk" />
-      </div>
+      <header className="sk-nav-row">
+        <span className="sk sk-brand" />
+        <span className="sk sk-pills" />
+        <span className="sk sk-user" />
+      </header>
+
+      <section className="cs-top cp-top">
+        <div className="cs-top-copy">
+          <span className="sk cp-sk-back" />
+          <span className="sk cp-sk-title" />
+          <span className="sk cp-sk-sub" />
+        </div>
+        <div className="cp-progress">
+          <span className="sk cp-sk-meta" />
+          <span className="sk cp-sk-bar" />
+        </div>
+      </section>
+
+      <section className="cp-wrap">
+        <span className="sk cp-sk-h2" />
+        <div className="cp-road">
+          <div className="cp-row">
+            <span className="sk cp-sk-mod" />
+            <span className="sk cp-sk-h" />
+            <span className="sk cp-sk-mod" />
+          </div>
+          <span className="sk cp-sk-v" />
+          <div className="cp-row">
+            <span className="sk cp-sk-mod" />
+            <span className="sk cp-sk-h" />
+            <span className="sk cp-sk-mod" />
+          </div>
+          <span className="sk cp-sk-v" />
+          <div className="cp-row">
+            <span className="sk cp-sk-mod" />
+            <span className="sk cp-sk-h" />
+            <span className="sk cp-sk-mod" />
+          </div>
+        </div>
+      </section>
     </div>
+  );
+}
+
+function ModuleCard({ step, crystalImg, onOpen }) {
+  return (
+    <article
+      className={`cp-card${step.completed ? " is-done" : ""}${step.unlocked ? "" : " is-lock"}`}
+      onClick={() => onOpen(step)}
+    >
+      <img src={crystalImg} alt="" />
+      <div className="cp-copy">
+        <small>Module {step.index + 1}</small>
+        <h3>{step.title}</h3>
+        <p>{step.description || "Lessons and a brain teaser live inside this module."}</p>
+        <b>
+          {step.completed ? (
+            <>
+              <IconCheck /> Completed
+            </>
+          ) : step.unlocked ? (
+            <>
+              <IconPlay /> Start module
+            </>
+          ) : (
+            <>
+              <IconLock /> Locked
+            </>
+          )}
+        </b>
+      </div>
+    </article>
   );
 }
 
@@ -75,27 +236,70 @@ export default function CoursePlayer() {
       const me = await fetch(`${API}/api/auth/me`, { headers }).then((res) => res.json());
       if (me?.data?.user) setUser(me.data.user);
 
-      const courseRes = await fetch(`${API}/api/courses/slug/${slug}`, { headers }).then((res) => res.json());
+      const [courseRes, catalogRes, enrolledRes] = await Promise.all([
+        fetch(`${API}/api/courses/slug/${slug}`, { headers }).then((res) => res.json()),
+        fetch(`${API}/api/courses`, { headers }).then((res) => res.json()),
+        fetch(`${API}/api/enrollments`, { headers })
+          .then((res) => res.json())
+          .catch(() => ({ data: [] })),
+      ]);
+
       if (!courseRes.success || !courseRes.data) {
         throw new Error(courseRes.message || "Course not found");
       }
+
       const current = courseRes.data;
-      setCourse(current);
+      const catalog = catalogRes.data || [];
+      const enrollments = enrolledRes.data || [];
+      const progressById = {};
+      enrollments.forEach((row) => {
+        progressById[Number(row.course_id)] = row;
+      });
 
-      const enrolledRes = await fetch(`${API}/api/enrollments`, { headers })
-        .then((res) => res.json())
-        .catch(() => ({ data: [] }));
-      const enrolled = (enrolledRes.data || []).some((row) => row.course_id === current.id);
+      if (current.level === "advanced") {
+        navigate("/courses", { replace: true });
+        return;
+      }
 
-      if (!enrolled) {
-        if (current.is_paid) {
-          navigate(`/checkout/${current.id}`, { replace: true });
+      if (current.level === "intermediate") {
+        const accessRes = await fetch(`${API}/api/payments/access`, { headers });
+        const accessJson = await accessRes.json().catch(() => ({}));
+        if (!accessJson?.data?.intermediate) {
+          navigate("/checkout/intermediate", { replace: true });
           return;
         }
-        await fetch(`${API}/api/enrollments/${current.id}`, {
+      }
+
+      const order = TRACK_ORDER[current.level] || [];
+      const here = order.indexOf(current.slug);
+      if (here > 0) {
+        const prevSlug = order[here - 1];
+        const prevCourse = catalog.find((item) => item.slug === prevSlug);
+        const prevOk = prevCourse
+          ? await courseIsFinished(prevCourse, progressById[Number(prevCourse.id)], headers)
+          : false;
+        if (!prevOk) {
+          navigate("/courses", { replace: true });
+          return;
+        }
+      }
+
+      setCourse(current);
+
+      const enrolled = enrollments.some((row) => Number(row.course_id) === Number(current.id));
+      if (!enrolled) {
+        const enrollRes = await fetch(`${API}/api/enrollments/${current.id}`, {
           method: "POST",
           headers,
         });
+        if (enrollRes.status === 402) {
+          navigate("/checkout/intermediate", { replace: true });
+          return;
+        }
+        if (!enrollRes.ok && enrollRes.status !== 409) {
+          const json = await enrollRes.json().catch(() => ({}));
+          throw new Error(json.message || "Could not enroll");
+        }
       }
 
       const modsRes = await fetch(`${API}/api/modules/course/${current.id}`, { headers }).then((res) => res.json());
@@ -119,6 +323,10 @@ export default function CoursePlayer() {
         nextMap[id] = done;
       });
       setDoneMap(nextMap);
+
+      if (ordered.length && progressPairs.every(([, done]) => done)) {
+        markCourseDone(current.id);
+      }
     };
 
     load()
@@ -138,8 +346,17 @@ export default function CoursePlayer() {
     });
   }, [modules, doneMap]);
 
+  const rows = useMemo(() => {
+    const next = [];
+    for (let i = 0; i < steps.length; i += 2) {
+      next.push(steps.slice(i, i + 2));
+    }
+    return next;
+  }, [steps]);
+
   const doneCount = steps.filter((item) => item.completed).length;
   const percent = steps.length ? Math.round((doneCount / steps.length) * 100) : 0;
+  const crystalImg = crystalFor(course);
 
   const openModule = (step) => {
     if (!step.unlocked) return;
@@ -161,7 +378,9 @@ export default function CoursePlayer() {
           <p>{course?.description || "Complete each module to unlock the next."}</p>
         </div>
         <div className="cp-progress">
-          <small>{doneCount}/{steps.length} modules</small>
+          <small>
+            {doneCount}/{steps.length} modules
+          </small>
           <div className="cs-bar">
             <span style={{ width: `${percent}%` }} />
           </div>
@@ -172,46 +391,28 @@ export default function CoursePlayer() {
 
       <section className="cp-wrap">
         <h2>Learning path</h2>
-        <div className={`cp-road cp-count-${Math.min(steps.length, 3)}`}>
-          {steps.map((step, index) => (
-            <article
-              key={step.id}
-              className={`cp-card cp-m${index + 1}${step.completed ? " is-done" : ""}${step.unlocked ? "" : " is-lock"}`}
-              onClick={() => openModule(step)}
-            >
-              <img src={crystal01} alt="" />
-              <div className="cp-copy">
-                <small>Module {index + 1}</small>
-                <h3>{step.title}</h3>
-                <p>{step.description || "Lessons and a brain teaser live inside this module."}</p>
-                <b>
-                  {step.completed ? (
-                    <>
-                      <IconCheck /> Completed
-                    </>
-                  ) : step.unlocked ? (
-                    <>
-                      <IconPlay /> Start module
-                    </>
-                  ) : (
-                    <>
-                      <IconLock /> Locked
-                    </>
-                  )}
-                </b>
+        <div className="cp-road">
+          {rows.map((pair, rowIndex) => (
+            <div key={pair[0].id} className="cp-pair">
+              <div className="cp-row">
+                <ModuleCard step={pair[0]} crystalImg={crystalImg} onOpen={openModule} />
+                {pair[1] ? (
+                  <>
+                    <div className={`cp-h-arrow${pair[1].unlocked ? " is-on" : ""}`} aria-hidden="true" />
+                    <ModuleCard step={pair[1]} crystalImg={crystalImg} onOpen={openModule} />
+                  </>
+                ) : (
+                  <span className="cp-row-fill" />
+                )}
               </div>
-            </article>
+              {rowIndex < rows.length - 1 ? (
+                <div
+                  className={`cp-v-arrow${rows[rowIndex + 1][0]?.unlocked ? " is-on" : ""}`}
+                  aria-hidden="true"
+                />
+              ) : null}
+            </div>
           ))}
-          {steps.length > 1 ? (
-            <div className={`cp-arrow cp-a12${steps[1]?.unlocked ? " is-on" : ""}`} aria-hidden="true">
-              <span />
-            </div>
-          ) : null}
-          {steps.length > 2 ? (
-            <div className={`cp-arrow cp-a23${steps[2]?.unlocked ? " is-on" : ""}`} aria-hidden="true">
-              <span />
-            </div>
-          ) : null}
         </div>
         <p className="cp-note">Finish the quiz in a module to unlock the next one.</p>
       </section>

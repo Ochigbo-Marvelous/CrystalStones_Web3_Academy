@@ -7,10 +7,8 @@ const { adminOnly } = require("../middlewares/admin");
 
 const router = express.Router();
 
-
 router.get("/module/:moduleId", lessonController.getLessonsByModule);
 router.get("/:id", lessonController.getLesson);
-
 
 router.post("/", protect, adminOnly, validate(createLessonSchema), lessonController.createLesson);
 router.patch("/:id", protect, adminOnly, validate(updateLessonSchema), lessonController.updateLesson);

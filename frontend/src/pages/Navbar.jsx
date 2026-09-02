@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import logo from "../assets/brand/logo-hex.png";
 import { rankImage } from "../lib/rankAssets";
 import { avatarSrc } from "../lib/avatarUrl";
+import { clearAllMentorThreads } from "../lib/mentorStorage";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
@@ -69,6 +70,7 @@ const logout = async () => {
   } catch {
     // local session still cleared below
   }
+  clearAllMentorThreads();
   localStorage.removeItem("token");
   localStorage.removeItem("user");
   window.location.href = "/signin";

@@ -1,0 +1,510 @@
+.ach-page {
+  width: 100%;
+  padding: 16px 36px 40px;
+  box-sizing: border-box;
+}
+
+.ach-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.ach-hero {
+  min-width: 220px;
+}
+
+.ach-hero h1 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.ach-hero p {
+  margin: 6px 0 0;
+  color: #9aa8bd;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.ach-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(168px, 200px));
+  gap: 10px;
+  margin: 0;
+  justify-content: end;
+}
+
+.ach-stats article,
+.ach-sk-stat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 78px;
+  padding: 12px 14px;
+  background: #0c1524;
+  border: 1px solid rgba(90, 140, 220, 0.16);
+  border-radius: 16px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+}
+
+.ach-sk-stat {
+  padding: 0;
+}
+
+.ach-stats small {
+  display: block;
+  color: #8b97ad;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.ach-stats b {
+  display: block;
+  margin-top: 2px;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.ach-ico {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #101b2d;
+  flex: 0 0 48px;
+}
+
+.ach-stat-svg,
+.ach-ring {
+  width: 32px;
+  height: 32px;
+  display: block;
+}
+
+.ach-certs {
+  margin-bottom: 18px;
+  padding: 16px;
+  background:
+    linear-gradient(180deg, rgba(28, 46, 78, 0.55), rgba(10, 16, 28, 0.96)),
+    #10192a;
+  border: 1px solid rgba(255, 59, 59, 0.28);
+  border-radius: 22px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+    0 12px 28px rgba(255, 59, 59, 0.18);
+}
+
+.ach-cert-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ach-cert,
+.ach-sk-cert {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 92px;
+  padding: 12px 14px;
+  background: #0b1220;
+  border: 1px solid #24344d;
+  border-radius: 16px;
+}
+
+.ach-sk-cert {
+  padding: 0;
+}
+
+.ach-cert h3 {
+  margin: 0 0 4px;
+  font-size: 14px;
+}
+
+.ach-cert p {
+  margin: 0;
+  color: #8b97ad;
+  font-size: 12px;
+}
+
+.ach-cert .ach-badge {
+  width: 56px;
+  height: 56px;
+  margin: 0;
+}
+
+.ach-cert-btn {
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #2f7bff;
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ach-cert-btn:disabled {
+  background: #151b26;
+  color: #8b97ad;
+  cursor: not-allowed;
+}
+
+.ach-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.ach-side,
+.ach-main {
+  background:
+    linear-gradient(180deg, rgba(28, 46, 78, 0.55), rgba(10, 16, 28, 0.96)),
+    #10192a;
+  border: 1px solid rgba(255, 59, 59, 0.28);
+  border-radius: 22px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+    0 12px 28px rgba(255, 59, 59, 0.18);
+}
+
+.ach-side {
+  padding: 16px 12px;
+}
+
+.ach-side h3 {
+  margin: 0 12px 10px;
+  color: #9aa8bd;
+  font-size: 13px;
+}
+
+.ach-side button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  color: #c5d0e0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ach-side-ico {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  opacity: 0.85;
+}
+
+.ach-side button span {
+  flex: 1;
+  text-align: left;
+}
+
+.ach-side button b {
+  font-size: 12px;
+  color: #8b97ad;
+}
+
+.ach-side button.active {
+  background: #16325c;
+  color: #fff;
+}
+
+.ach-side button.active b,
+.ach-side button.active .ach-side-ico {
+  color: #fff;
+  opacity: 1;
+}
+
+.ach-main {
+  padding: 16px;
+}
+
+.ach-main-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.ach-main-head h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.ach-main-head small {
+  color: #8b97ad;
+  font-size: 12px;
+}
+
+.ach-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ach-card,
+.ach-sk-card {
+  min-height: 210px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 18px 12px 14px;
+  background: #0b1220;
+  border: 1px solid #24344d;
+  border-radius: 16px;
+}
+
+.ach-sk-card {
+  padding: 0;
+}
+
+.ach-badge {
+  width: 72px;
+  height: 72px;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.35));
+}
+
+.ach-card.is-earned .ach-badge {
+  filter: drop-shadow(0 0 12px rgba(240, 193, 75, 0.35));
+}
+
+.ach-card.is-progress .ach-badge {
+  filter: drop-shadow(0 0 12px rgba(77, 163, 255, 0.28));
+}
+
+.ach-card h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.ach-card p {
+  margin: 0 0 auto;
+  color: #8b97ad;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.ach-pill {
+  margin-top: 12px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ach-card.is-earned .ach-pill {
+  background: rgba(80, 180, 120, 0.16);
+  color: #7dffb3;
+}
+
+.ach-card.is-progress .ach-pill {
+  background: rgba(255, 168, 76, 0.16);
+  color: #ffc078;
+}
+
+.ach-card.is-locked {
+  opacity: 0.62;
+}
+
+.ach-card.is-locked .ach-pill {
+  background: #151b26;
+  color: #8b97ad;
+}
+
+.ach-bar {
+  width: 80%;
+  height: 6px;
+  margin: 10px 0 0;
+  border-radius: 999px;
+  background: #1d2636;
+  overflow: hidden;
+}
+
+.ach-bar span {
+  display: block;
+  height: 100%;
+  background: #2f6bff;
+}
+
+.ach-toast {
+  position: fixed;
+  top: 72px;
+  right: 24px;
+  z-index: 40;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #10233d;
+  color: #d7e6ff;
+  font-size: 13px;
+}
+
+.ach-sk-title {
+  width: 220px;
+  height: 32px;
+  display: block;
+}
+
+.ach-sk-sub {
+  width: 180px;
+  height: 12px;
+  display: block;
+  margin-top: 8px;
+}
+
+.ach-sk-head {
+  width: 180px;
+  height: 16px;
+  display: block;
+  margin-bottom: 14px;
+}
+
+.ach-sk-side-h {
+  width: 90px;
+  height: 14px;
+  display: block;
+  margin: 0 12px 12px;
+}
+
+.ach-sk-side-item {
+  height: 38px;
+  border-radius: 10px;
+  display: block;
+  margin-bottom: 6px;
+}
+
+@media (max-width: 1200px) {
+  .ach-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ach-hero {
+    text-align: center;
+  }
+
+  .ach-sk-title,
+  .ach-sk-sub {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .ach-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
+  }
+}
+
+@media (max-width: 1100px) {
+  .ach-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .ach-cert-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ach-cert:nth-child(3),
+  .ach-sk-cert:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+
+  .ach-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .ach-page {
+    padding: 12px 16px 32px;
+  }
+
+  .ach-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ach-cert-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ach-cert:nth-child(3),
+  .ach-sk-cert:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+
+  .ach-cert {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .ach-cert-btn {
+    justify-self: center;
+  }
+
+  .ach-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .ach-card,
+  .ach-sk-card {
+    min-height: 180px;
+    height: auto;
+    padding: 14px 10px 12px;
+  }
+
+  .ach-sk-card {
+    padding: 0;
+  }
+
+  .ach-badge {
+    width: 52px;
+    height: 52px;
+    margin-bottom: 8px;
+  }
+
+  .ach-card h3 {
+    font-size: 13px;
+    line-height: 1.25;
+  }
+
+  .ach-card p {
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+
+  .ach-pill {
+    margin-top: 8px;
+    height: 22px;
+    padding: 0 8px;
+    font-size: 10px;
+  }
+}

@@ -11,6 +11,7 @@ const errorHandler = require("./middlewares/errorHandler");
 const config = require("./config");
 
 const authRoutes = require("./routes/auth.routes");
+const googleAuthRoutes = require("./routes/google.auth.routes");
 const courseRoutes = require("./routes/course.routes");
 const moduleRoutes = require("./routes/module.routes");
 const lessonRoutes = require("./routes/lesson.routes");
@@ -22,6 +23,7 @@ const profileRoutes = require("./routes/profile.routes");
 const achievementRoutes = require("./routes/achievement.routes");
 const mentorRoutes = require("./routes/mentor.routes");
 const paymentRoutes = require("./routes/payment.routes");
+const leaderboardRoutes = require("./routes/leaderboard.routes");
 
 const app = express();
 const serveFrontend = process.env.SERVE_FRONTEND === "true";
@@ -126,6 +128,7 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+app.use("/api/auth", googleAuthRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/modules", moduleRoutes);
@@ -138,6 +141,7 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/achievements", achievementRoutes);
 app.use("/api/mentor", mentorRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/leaderboard", leaderboardRoutes);
 
 if (serveFrontend) {
   const frontendDist = path.join(__dirname, "../../frontend/dist");

@@ -11,14 +11,14 @@ const readCallback = () => {
   return { error, token };
 };
 
-export default function AuthCallback() {
+export default function OAuthCallback() {
   const navigate = useNavigate();
-  const { error: oauthError, token } = readCallback();
+  const { error: googleError, token } = readCallback();
   const error =
-    oauthError ||
-    (!token ? "Sign-in did not return a session. Try again." : "");
+    googleError ||
+    (!token ? "Google sign-in did not return a session. Try again." : "");
 
-  useEffect(() => {token
+  useEffect(() => {
     if (error || !token) return undefined;
 
     localStorage.setItem("token", token);
@@ -36,7 +36,7 @@ export default function AuthCallback() {
       .catch(() => {})
       .finally(() => {
         if (ac.signal.aborted) return;
-        window.history.replaceState(null, "", "/auth/callback");
+        window.history.replaceState(null, "", "/oauth/callback");
         navigate("/dashboard", { replace: true });
       });
 
@@ -47,7 +47,7 @@ export default function AuthCallback() {
     return (
       <div className="su">
         <div className="su-card">
-          <h1>Sign-in</h1>
+          <h1>Google sign-in</h1>
           <p className="su-error">{error}</p>
           <p className="su-foot">
             <Link to="/signin">Back to sign in</Link>

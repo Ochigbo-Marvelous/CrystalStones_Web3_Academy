@@ -1,3 +1,4 @@
+
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
@@ -26,6 +27,14 @@ if (!isLocalHost) {
 
     return originalFetch(input, init);
   };
+}
+
+const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+const query = new URLSearchParams(window.location.search);
+const oauthToken = hash.get("token") || query.get("token");
+if (oauthToken) {
+  localStorage.setItem("token", oauthToken);
+  window.location.replace("/dashboard");
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(

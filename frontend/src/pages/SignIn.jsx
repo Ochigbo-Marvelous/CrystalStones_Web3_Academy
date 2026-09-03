@@ -1,10 +1,23 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import crystal from "../assets/brand/crystal-hero.png";
 import logo from "../assets/brand/logo-hex.png";
 import "../styles/signup.css";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:5001";
+const API = (import.meta.env.VITE_API_URL || "http://localhost:5001").replace(/\/$/, "");
+
+const oauthUrl = (path) => {
+  const fallback = "http://localhost:5001";
+  try {
+    const env = API || fallback;
+    const u = new URL(env, window.location.origin);
+    const origin = u.origin === window.location.origin || u.port === "5173" ? fallback : u.origin;
+    return `${origin}${path}`;
+  } catch {
+    return `${fallback}${path}`;
+  }
+};
 
 function GoogleIcon() {
   return (
@@ -78,7 +91,7 @@ export default function SignIn() {
   return (
     <div className="su">
       <div className="su-grid su-grid-login">
-        <form className="su-card" onSubmit={onSubmit}>
+        <div className="su-card">
           <div className="su-brand su-brand-login">
             <img src={logo} alt="" />
             <div className="su-brand-text">
@@ -88,62 +101,68 @@ export default function SignIn() {
           </div>
 
           <h1>Welcome back</h1>
-          <p className="lead">Sign in with your username or email.</p>
+          <p className="lead">Sign in with your username or email. Or continue with Google.</p>
 
-          <label className="su-label">USERNAME OR EMAIL</label>
-          <input
-            className="su-input"
-            placeholder="Enter username or email"
-            value={form.login}
-            onChange={set("login")}
-          />
+          <form onSubmit={onSubmit}>
+            <label className="su-label">USERNAME OR EMAIL</label>
+            <input
+              className="su-input"
+              placeholder="Enter username or email"
+              value={form.login}
+              onChange={set("login")}
+            />
 
-          <label className="su-label">PASSWORD</label>
-          <input
-            className="su-input"
-            type="password"
-            placeholder="Enter your password"
-            value={form.password}
-            onChange={set("password")}
-          />
+            <label className="su-label">PASSWORD</label>
+            <input
+              className="su-input"
+              type="password"
+              placeholder="Enter your password"
+              value={form.password}
+              onChange={set("password")}
+            />
 
-          <p className="su-note">
-            <Link to="/forgot-password">Forgot password?</Link>
-          </p>
+            <p className="su-note">
+              <Link to="/forgot-password">Forgot password?</Link>
+            </p>
 
-          {error ? <p className="su-error">{error}</p> : null}
+            {error ? <p className="su-error">{error}</p> : null}
 
-          <button className="su-primary" type="submit" disabled={!ready}>
-            {loading ? "SIGNING IN..." : "SIGN IN"}
-          </button>
+            <button className="su-primary" type="submit" disabled={!ready}>
+              {loading ? "SIGNING IN..." : "SIGN IN"}
+            </button>
+          </form>
 
           <div className="su-or">or</div>
 
           <div className="su-social">
-            <button
-              type="button"
+            <a
               className="su-oauth"
-              onClick={() => {
-                window.location.href = `${API}/api/auth/google`;
+              href="http://localhost:5001/api/auth/google"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.location.href = oauthUrl("/api/auth/google");
               }}
             >
               <GoogleIcon /> Continue with Google
-            </button>
-            <button
-              type="button"
+            </a>
+            <a
               className="su-oauth"
-              onClick={() => {
-                window.location.href = `${API}/api/auth/github`;
+              href="http://localhost:5001/api/auth/github"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.location.href = oauthUrl("/api/auth/github");
               }}
             >
               <GitHubIcon /> Continue with GitHub
-            </button>
+            </a>
           </div>
 
           <p className="su-foot">
-            Don&apos;t have an account? <Link to="/signup">SIGN UP</Link>
+            Don't have an account? <Link to="/signup">SIGN UP</Link>
           </p>
-        </form>
+        </div>
 
         <div className="su-crystal">
           <div className="su-stars">

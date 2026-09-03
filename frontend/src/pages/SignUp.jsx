@@ -9,7 +9,19 @@ import iconProgress from "../assets/brand/icon-progress.png";
 import iconCommunity from "../assets/brand/icon-community.png";
 import "../styles/signup.css";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:5001";
+const API = (import.meta.env.VITE_API_URL || "http://localhost:5001").replace(/\/$/, "");
+
+const oauthUrl = (path) => {
+  const fallback = "http://localhost:5001";
+  try {
+    const env = API || fallback;
+    const u = new URL(env, window.location.origin);
+    const origin = u.origin === window.location.origin || u.port === "5173" ? fallback : u.origin;
+    return `${origin}${path}`;
+  } catch {
+    return `${fallback}${path}`;
+  }
+};
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 const ALLOWED_AVATAR = new Set(["image/jpeg", "image/png", "image/webp"]);
 
@@ -270,98 +282,116 @@ export default function SignUp() {
             <img src={iconCommunity} alt="" />
             <div>
               <h3>COMMUNITY ACCESS</h3>
-              <p>Connect. Share. Elevate.<br /><b>You&apos;re not alone.</b></p>
+              <p>Connect. Share. Elevate.<br /><b>You're not alone.</b></p>
             </div>
           </div>
         </aside>
 
-        <form className="su-card" onSubmit={onSubmit}>
+        <div className="su-card">
           <h1>Create your account</h1>
-          <p className="lead">Verify your email before creating the account.</p>
+          <p className="lead">Verify your email before creating the account. Or continue with Google.</p>
 
-          <div className="su-avatar">
-            <img src={avatar} alt="Your avatar" />
-            <label className="su-avatar-btn">
-              Upload photo
-              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onAvatar} hidden />
-            </label>
-          </div>
+          <form onSubmit={onSubmit}>
+            <div className="su-avatar">
+              <img src={avatar} alt="Your avatar" />
+              <label className="su-avatar-btn">
+                Upload photo
+                <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onAvatar} hidden />
+              </label>
+            </div>
 
-          <label className="su-label">FULL NAME</label>
-          <input className="su-input" placeholder="Enter your full name" value={form.fullName} onChange={set("fullName")} />
+            <label className="su-label">FULL NAME</label>
+            <input className="su-input" placeholder="Enter your full name" value={form.fullName} onChange={set("fullName")} />
 
-          <label className="su-label">EMAIL</label>
-          <input className="su-input" type="email" placeholder="Enter your email" value={form.email} onChange={set("email")} />
+            <label className="su-label">EMAIL</label>
+            <input className="su-input" type="email" placeholder="Enter your email" value={form.email} onChange={set("email")} />
 
-          <label className="su-label">EMAIL CODE</label>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8 }}>
-            <input
-              className="su-input"
-              inputMode="numeric"
-              maxLength={6}
-              placeholder="6-digit code"
-              value={form.code}
-              onChange={set("code")}
-            />
+            <label className="su-label">EMAIL CODE</label>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8 }}>
+              <input
+                className="su-input"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="6-digit code"
+                value={form.code}
+                onChange={set("code")}
+              />
+              <button
+                type="button"
+                className="su-primary"
+                onClick={sendCode}
+                disabled={sendingCode || cooldown > 0}
+                style={{ width: "auto", padding: "0 16px", whiteSpace: "nowrap" }}
+              >
+                {cooldown > 0 ? `${cooldown}s` : sendingCode ? "SENDING" : "GET CODE"}
+              </button>
+            </div>
             <button
               type="button"
-              className="su-primary"
-              onClick={sendCode}
-              disabled={sendingCode || cooldown > 0}
-              style={{ width: "auto", padding: "0 16px", whiteSpace: "nowrap" }}
+              className="su-oauth"
+              onClick={verifyCode}
+              disabled={verifying || !form.code}
+              style={{ marginTop: 8, marginBottom: 12 }}
             >
-              {cooldown > 0 ? `${cooldown}s` : sendingCode ? "SENDING" : "GET CODE"}
+              {emailTicket ? "EMAIL VERIFIED" : verifying ? "VERIFYING..." : "VERIFY CODE"}
             </button>
-          </div>
-          <button
-            type="button"
-            className="su-oauth"
-            onClick={verifyCode}
-            disabled={verifying || !form.code}
-            style={{ marginTop: 8 }}
-          >
-            {emailTicket ? "EMAIL VERIFIED" : verifying ? "VERIFYING..." : "VERIFY CODE"}
-          </button>
 
-          <label className="su-label">USERNAME</label>
-          <input className="su-input" placeholder="Choose a username" value={form.username} onChange={set("username")} />
-          <p className="su-note">This will be your unique Crystal ID.</p>
+            <label className="su-label">USERNAME</label>
+            <input className="su-input" placeholder="Choose a username" value={form.username} onChange={set("username")} />
+            <p className="su-note">This will be your unique Crystal ID.</p>
 
-          <label className="su-label">PASSWORD</label>
-          <input className="su-input" type="password" placeholder="Create a password" value={form.password} onChange={set("password")} />
+            <label className="su-label">PASSWORD</label>
+            <input className="su-input" type="password" placeholder="Create a password" value={form.password} onChange={set("password")} />
 
-          <label className="su-label">CONFIRM PASSWORD</label>
-          <input className="su-input" type="password" placeholder="Confirm your password" value={form.confirm} onChange={set("confirm")} />
+            <label className="su-label">CONFIRM PASSWORD</label>
+            <input className="su-input" type="password" placeholder="Confirm your password" value={form.confirm} onChange={set("confirm")} />
 
-          <div className="su-rules">
-            {rules.map((rule) => (
-              <div className={`su-rule${rule.ok ? " ok" : ""}`} key={rule.id}>
-                {rule.ok ? "✓" : "○"} {rule.label}
-              </div>
-            ))}
-          </div>
+            <div className="su-rules">
+              {rules.map((rule) => (
+                <div className={`su-rule${rule.ok ? " ok" : ""}`} key={rule.id}>
+                  {rule.ok ? "✓" : "○"} {rule.label}
+                </div>
+              ))}
+            </div>
 
-          {info ? <p className="su-note">{info}</p> : null}
-          {error ? <p className="su-error">{error}</p> : null}
+            {info ? <p className="su-note">{info}</p> : null}
+            {error ? <p className="su-error">{error}</p> : null}
 
-          <button className="su-primary" type="submit" disabled={!ready}>
-            {loading ? "CREATING..." : "CREATE ACCOUNT"}
-          </button>
+            <button className="su-primary" type="submit" disabled={!ready}>
+              {loading ? "CREATING..." : "CREATE ACCOUNT"}
+            </button>
+          </form>
 
           <div className="su-or">or</div>
           <div className="su-social">
-            <button type="button" className="su-oauth" onClick={() => { window.location.href = `${API}/api/auth/google`; }}>
+            <a
+              className="su-oauth"
+              href="http://localhost:5001/api/auth/google"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.location.href = oauthUrl("/api/auth/google");
+              }}
+            >
               <GoogleIcon /> Continue with Google
-            </button>
-            <button type="button" className="su-oauth" onClick={() => { window.location.href = `${API}/api/auth/github`; }}>
+            </a>
+            <a
+              className="su-oauth"
+              href="http://localhost:5001/api/auth/github"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.location.href = oauthUrl("/api/auth/github");
+              }}
+            >
               <GitHubIcon /> Continue with GitHub
-            </button>
+            </a>
           </div>
           <p className="su-foot">
             Already have an account? <Link to="/signin">SIGN IN</Link>
           </p>
           <p className="su-legal">By continuing, you agree to the Terms of Service and Privacy Policy.</p>
-        </form>
+        </div>
 
         <div className="su-crystal">
           <div className="su-stars">

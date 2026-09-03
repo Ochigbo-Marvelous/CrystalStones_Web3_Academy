@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import crystalBasic from "../assets/brand/crystal-basic-blue.png";
-import crystalIntermediate from "../assets/brand/crystal-intermediate-red.png";
+import crystalIntermediate from "../assets/brand/crystal-intermediate-gold.png";
 import crystalAdvanced from "../assets/brand/crystal-advanced-green.png";
 import mentorCrystal from "../assets/brand/crystal-hero.png";
 import iconBook from "../assets/brand/icon-book.png";
@@ -82,12 +82,37 @@ function Skeleton() {
   );
 }
 
+function BoardRow({ row }) {
+  return (
+    <li className={`db-board-row${row.is_you ? " is-you" : ""}`}>
+      <span className={`db-board-place p${Math.min(Number(row.place) || 4, 4)}`}>#{row.place}</span>
+      <img src={rankImage(row.rank)} alt="" width={32} height={32} />
+      <div className="db-board-copy">
+        <b>
+          {row.username}
+          {row.is_you ? <em> you</em> : null}
+        </b>
+        <small>
+          {row.rank} · {row.xp_into ?? row.xp ?? 0} / {row.xp_target || 100} XP
+        </small>
+      </div>
+      {Number(row.certificates) > 0 ? (
+        <span className="db-board-certs">
+          {row.certificates} cert{Number(row.certificates) === 1 ? "" : "s"}
+        </span>
+      ) : (
+        <span className="db-board-certs"> </span>
+      )}
+    </li>
+  );
+}
+
 function CourseRow({ course, done, onOpen }) {
   const pct = done ? 100 : Math.round(course.progress_percent || 0);
   return (
     <div className="db-progress-row">
-      <img src={course.thumbnail || crystalForLevel(course.level)} alt="" />
-      <div>
+      <img src={crystalForLevel(course.level)} alt="" />
+      <div className="db-progress-copy">
         <b>{course.title}</b>
         <small>{course.level === "beginner" ? "Basic" : course.level}</small>
       </div>
@@ -113,6 +138,7 @@ export default function Dashboard() {
   const [mentorBusy, setMentorBusy] = useState(false);
   const [thread, setThread] = useState([]);
   const [completedPage, setCompletedPage] = useState(1);
+  const [board, setBoard] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -124,15 +150,20 @@ export default function Dashboard() {
     const headers = { Authorization: `Bearer ${token}` };
     const started = Date.now();
 
-    fetch(`${API}/api/dashboard`, { headers })
-      .then((res) => res.json())
-      .then((dash) => {
+    Promise.all([
+      fetch(`${API}/api/dashboard`, { headers }).then((res) => res.json()),
+      fetch(`${API}/api/leaderboard`, { headers })
+        .then((res) => res.json())
+        .catch(() => null),
+    ])
+      .then(([dash, boardJson]) => {
         if (!dash.success) throw new Error(dash.message || "Dashboard failed");
         setData(dash.data);
         if (dash.data?.user) {
           localStorage.setItem("user", JSON.stringify(dash.data.user));
           setThread(readMentorThread(dash.data.user.id));
         }
+        if (boardJson?.success && boardJson.data) setBoard(boardJson.data);
       })
       .catch((err) => {
         if (String(err.message).toLowerCase().includes("not authorized")) {
@@ -198,7 +229,6 @@ export default function Dashboard() {
   };
 
   const completed = useMemo(() => data?.completed || [], [data]);
-  const inProgress = useMemo(() => data?.in_progress || [], [data]);
   const totalCompletedPages = useMemo(() => {
     const pages = Math.ceil(completed.length / COMPLETED_PER_PAGE);
     return Math.min(COMPLETED_MAX_PAGES, Math.max(1, pages || 1));
@@ -215,6 +245,7 @@ export default function Dashboard() {
 
   const user = data?.user || {};
   const stats = data?.stats || {};
+  const inProgress = data?.in_progress || [];
   const rank = data?.rank_progress || {};
   const displayRank = rank.rank || user.current_rank || "Novice";
   const crystalId = user.username || "Learner";
@@ -325,7 +356,7 @@ export default function Dashboard() {
 
       <section className="db-main">
         <div className="db-left">
-          <div className="db-card db-equal db-progress-card">
+          <div className="db-card db-equal">
             <div className="db-card-head">
               <h2>In Progress</h2>
               <button className="db-link" type="button" onClick={() => navigate("/courses")}>
@@ -347,7 +378,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="db-card db-equal db-completed-card">
+          <div className="db-card db-equal">
             <div className="db-card-head">
               <h2>Completed</h2>
               <small>{completed.length} finished</small>
@@ -448,6 +479,24 @@ export default function Dashboard() {
             <p className="db-rank-note">
               {rank.remaining || 0} XP until {rank.next_rank || "next rank"}
             </p>
+          </div>
+
+          <div className="db-card db-board-card">
+            <div className="db-card-head">
+              <h2>Leaderboard</h2>
+              <small>
+                {board?.you?.place ? `You #${board.you.place}` : `${board?.total || 0} learners`}
+              </small>
+            </div>
+            {!board?.rows?.length ? (
+              <p className="db-empty">Rankings appear as learners earn XP.</p>
+            ) : (
+              <ul className="db-board-list">
+                {board.rows.map((row) => (
+                  <BoardRow key={`${row.user_id}-${row.place}`} row={row} />
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </section>

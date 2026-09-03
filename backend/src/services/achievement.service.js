@@ -16,14 +16,23 @@ const POINTS = {
   track_advanced: 1000,
 };
 
+const REVOKEABLE = new Set([
+  "complete_all_courses",
+  "track_basic",
+  "track_intermediate",
+  "track_advanced",
+]);
+
+const isBeginner = (level) => {
+  const v = String(level || "").toLowerCase();
+  return v === "beginner" || v === "basic";
+};
+
 const targetFor = (condition, stats) => {
   switch (condition) {
     case "complete_first_module":
     case "complete_first_course":
     case "quiz_perfect":
-    case "track_basic":
-    case "track_intermediate":
-    case "track_advanced":
       return 1;
     case "complete_3_modules":
       return 3;
@@ -37,8 +46,14 @@ const targetFor = (condition, stats) => {
       return 3;
     case "quizzes_5":
       return 5;
+    case "track_basic":
+      return Math.max(1, stats.basicPublished);
+    case "track_intermediate":
+      return Math.max(1, stats.intermediatePublished);
+    case "track_advanced":
+      return stats.advancedPublished > 0 ? stats.advancedPublished : 1;
     case "complete_all_courses":
-      return Math.max(1, stats.publishedCourses);
+      return Math.max(1, stats.livePublished);
     default:
       return 1;
   }
@@ -60,20 +75,43 @@ const currentFor = (condition, stats) => {
       return Math.min(stats.streak, 7);
     case "complete_3_courses":
       return Math.min(stats.courses, 3);
-    case "complete_all_courses":
-      return Math.min(stats.courses, Math.max(1, stats.publishedCourses));
     case "quizzes_5":
       return Math.min(stats.passedQuizzes, 5);
     case "quiz_perfect":
       return Math.min(stats.perfectQuizzes, 1);
     case "track_basic":
-      return stats.tracks.has("basic") || stats.tracks.has("beginner") ? 1 : 0;
+      return stats.basicPublished > 0 ? Math.min(stats.basicDone, stats.basicPublished) : 0;
     case "track_intermediate":
-      return stats.tracks.has("intermediate") ? 1 : 0;
+      return stats.intermediatePublished > 0
+        ? Math.min(stats.intermediateDone, stats.intermediatePublished)
+        : 0;
     case "track_advanced":
-      return stats.tracks.has("advanced") ? 1 : 0;
+      return stats.advancedPublished > 0
+        ? Math.min(stats.advancedDone, stats.advancedPublished)
+        : 0;
+    case "complete_all_courses":
+      return Math.min(stats.liveDone, Math.max(1, stats.livePublished));
     default:
       return 0;
+  }
+};
+
+const shouldAward = (condition, stats) => {
+  if (condition === "track_advanced" && stats.advancedPublished === 0) return false;
+  if (condition === "complete_all_courses" && stats.livePublished === 0) return false;
+  if (condition === "track_basic" && stats.basicPublished === 0) return false;
+  if (condition === "track_intermediate" && stats.intermediatePublished === 0) return false;
+  const target = targetFor(condition, stats);
+  return currentFor(condition, stats) >= target && target > 0;
+};
+
+const countQuiz = async (sql, userId) => {
+  try {
+    const [[row]] = await pool.query(sql, [userId]);
+    return Number(row.count || 0);
+  } catch (err) {
+    if (err.code === "ER_NO_SUCH_TABLE" || err.code === "ER_BAD_FIELD_ERROR") return 0;
+    throw err;
   }
 };
 
@@ -94,54 +132,98 @@ const loadStats = async (userId) => {
     "SELECT current_streak FROM users WHERE id = ? LIMIT 1",
     [userId]
   );
-  const [[published]] = await pool.query(
-    "SELECT COUNT(*) AS count FROM courses WHERE is_published = TRUE"
-  );
-  const [[passedQuizzes]] = await pool.query(
-    "SELECT COUNT(*) AS count FROM quiz_attempts WHERE user_id = ? AND passed = TRUE",
-    [userId]
-  );
-  const [[perfectQuizzes]] = await pool.query(
-    "SELECT COUNT(*) AS count FROM quiz_attempts WHERE user_id = ? AND score >= 100",
+
+  const [byLevel] = await pool.query(
+    `SELECT c.level,
+            COUNT(*) AS published,
+            SUM(
+              CASE
+                WHEN e.status = 'completed' OR e.progress_percent >= 100 THEN 1
+                ELSE 0
+              END
+            ) AS done
+     FROM courses c
+     LEFT JOIN enrollments e
+       ON e.course_id = c.id AND e.user_id = ?
+     WHERE c.is_published = TRUE
+     GROUP BY c.level`,
     [userId]
   );
 
-  let tracks = new Set();
-  try {
-    const [certs] = await pool.query(
-      "SELECT level FROM certificates WHERE user_id = ?",
-      [userId]
-    );
-    tracks = new Set(certs.map((row) => row.level).filter(Boolean));
-  } catch (err) {
-    if (err.code !== "ER_BAD_FIELD_ERROR") throw err;
+  let basicPublished = 0;
+  let basicDone = 0;
+  let intermediatePublished = 0;
+  let intermediateDone = 0;
+  let advancedPublished = 0;
+  let advancedDone = 0;
+
+  for (const row of byLevel) {
+    const published = Number(row.published || 0);
+    const done = Number(row.done || 0);
+    const level = String(row.level || "").toLowerCase();
+    if (isBeginner(level)) {
+      basicPublished += published;
+      basicDone += done;
+    } else if (level === "intermediate") {
+      intermediatePublished += published;
+      intermediateDone += done;
+    } else if (level === "advanced") {
+      advancedPublished += published;
+      advancedDone += done;
+    }
   }
+
+  const livePublished = basicPublished + intermediatePublished;
+  const liveDone = basicDone + intermediateDone;
+
+  const passedQuizzes = await countQuiz(
+    "SELECT COUNT(*) AS count FROM quiz_attempts WHERE user_id = ? AND passed = TRUE",
+    userId
+  );
+  const perfectQuizzes = await countQuiz(
+    "SELECT COUNT(*) AS count FROM quiz_attempts WHERE user_id = ? AND score >= 100",
+    userId
+  );
 
   return {
     modules: Number(modules.count || 0),
     courses: Number(courses.count || 0),
     streak: Number(user?.current_streak || 0),
-    publishedCourses: Number(published.count || 0),
-    passedQuizzes: Number(passedQuizzes.count || 0),
-    perfectQuizzes: Number(perfectQuizzes.count || 0),
-    tracks,
+    passedQuizzes,
+    perfectQuizzes,
+    basicPublished,
+    basicDone,
+    intermediatePublished,
+    intermediateDone,
+    advancedPublished,
+    advancedDone,
+    livePublished,
+    liveDone,
   };
-};
-
-const shouldAward = (condition, stats) => {
-  const target = targetFor(condition, stats);
-  return currentFor(condition, stats) >= target && target > 0;
 };
 
 const checkAndAwardAchievements = async (userId) => {
   const stats = await loadStats(userId);
   const [earned] = await pool.query(
-    "SELECT achievement_id FROM user_achievements WHERE user_id = ?",
+    `SELECT ua.achievement_id, a.required_condition
+     FROM user_achievements ua
+     JOIN achievements a ON a.id = ua.achievement_id
+     WHERE ua.user_id = ?`,
     [userId]
   );
   const earnedIds = new Set(earned.map((row) => row.achievement_id));
   const [achievements] = await pool.query("SELECT * FROM achievements");
   const newlyEarned = [];
+
+  for (const row of earned) {
+    if (!REVOKEABLE.has(row.required_condition)) continue;
+    if (shouldAward(row.required_condition, stats)) continue;
+    await pool.query(
+      "DELETE FROM user_achievements WHERE user_id = ? AND achievement_id = ?",
+      [userId, row.achievement_id]
+    );
+    earnedIds.delete(row.achievement_id);
+  }
 
   for (const achievement of achievements) {
     if (earnedIds.has(achievement.id)) continue;

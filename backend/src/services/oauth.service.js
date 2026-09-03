@@ -4,8 +4,13 @@ const ApiError = require("../utils/ApiError");
 const generateToken = require("../utils/generateToken");
 const securityLogger = require("../utils/securityLogger");
 
-const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-const backendUrl = (process.env.BACKEND_URL || "http://localhost:5001").replace(/\/$/, "");
+const strip = (value) => String(value || "").trim().replace(/^["']|["']$/g, "");
+
+const frontendUrl = strip(process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/$/, "");
+const backendUrl = strip(process.env.BACKEND_URL || "http://localhost:5001").replace(/\/$/, "");
+
+const googleCallbackUrl = () =>
+  strip(process.env.GOOGLE_CALLBACK_URL) || `${backendUrl}/api/auth/google/callback`;
 
 const safeUsername = async (base) => {
   const cleaned =
@@ -42,13 +47,6 @@ const upsertOauthUser = async ({ provider, providerId, fullName, email, username
   const [byEmail] = await pool.query("SELECT * FROM users WHERE email = ?", [email]);
   if (byEmail.length > 0) {
     const user = byEmail[0];
-    if (user.password) {
-      throw new ApiError(
-        409,
-        "An account with this email already exists. Sign in with your password."
-      );
-    }
-
     await pool.query(
       "UPDATE users SET provider = ?, provider_id = ?, avatar = COALESCE(avatar, ?) WHERE id = ?",
       [provider, String(providerId), avatar || null, user.id]
@@ -76,7 +74,7 @@ const upsertOauthUser = async ({ provider, providerId, fullName, email, username
 };
 
 const githubAuthUrl = () => {
-  const clientId = process.env.GITHUB_CLIENT_ID?.trim();
+  const clientId = strip(process.env.GITHUB_CLIENT_ID);
   if (!clientId) throw new ApiError(500, "GitHub login is not configured");
 
   const state = crypto.randomBytes(16).toString("hex");
@@ -89,8 +87,8 @@ const githubAuthUrl = () => {
 };
 
 const githubCallback = async (code) => {
-  const clientId = process.env.GITHUB_CLIENT_ID?.trim();
-  const clientSecret = process.env.GITHUB_CLIENT_SECRET?.trim();
+  const clientId = strip(process.env.GITHUB_CLIENT_ID);
+  const clientSecret = strip(process.env.GITHUB_CLIENT_SECRET);
   if (!clientId || !clientSecret) throw new ApiError(500, "GitHub login is not configured");
 
   const body = new URLSearchParams({
@@ -145,7 +143,85 @@ const githubCallback = async (code) => {
   });
 };
 
+const googleAuthUrl = () => {
+  const clientId = strip(process.env.GOOGLE_CLIENT_ID);
+  if (!clientId.includes(".apps.googleusercontent.com")) {
+    throw new ApiError(500, "Google login is not configured");
+  }
+
+  const state = crypto.randomBytes(16).toString("hex");
+  const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+  url.searchParams.set("client_id", clientId);
+  url.searchParams.set("redirect_uri", googleCallbackUrl());
+  url.searchParams.set("response_type", "code");
+  url.searchParams.set("scope", "openid email profile");
+  url.searchParams.set("state", state);
+  url.searchParams.set("prompt", "select_account");
+  url.searchParams.set("access_type", "online");
+  return { url: url.toString(), state };
+};
+
+const googleCallback = async (code) => {
+  const clientId = strip(process.env.GOOGLE_CLIENT_ID);
+  const clientSecret = strip(process.env.GOOGLE_CLIENT_SECRET);
+  if (!clientId || !clientSecret) throw new ApiError(500, "Google login is not configured");
+
+  const body = new URLSearchParams({
+    code: String(code),
+    client_id: clientId,
+    client_secret: clientSecret,
+    redirect_uri: googleCallbackUrl(),
+    grant_type: "authorization_code",
+  });
+
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+  const tokenData = await tokenRes.json().catch(() => ({}));
+  console.log("Google token response", {
+    error: tokenData.error,
+    error_description: tokenData.error_description,
+    hasToken: Boolean(tokenData.access_token),
+  });
+
+  if (!tokenData.access_token) {
+    const detail =
+      [tokenData.error, tokenData.error_description].filter(Boolean).join(" — ") ||
+      "Google authorization failed";
+    throw new ApiError(401, `Google did not accept this sign-in (${detail}).`);
+  }
+
+  const profile = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+    headers: { Authorization: `Bearer ${tokenData.access_token}` },
+  }).then((res) => res.json());
+
+  if (!profile.email) throw new ApiError(401, "Google did not return an email for this account.");
+  if (profile.email_verified === false) throw new ApiError(401, "That Google email is not verified.");
+
+  return upsertOauthUser({
+    provider: "google",
+    providerId: profile.sub,
+    fullName: profile.name || profile.email.split("@")[0],
+    email: String(profile.email).trim().toLowerCase(),
+    usernameHint: profile.given_name || profile.email.split("@")[0],
+    avatar: profile.picture,
+  });
+};
+
 const redirectWithToken = (token) =>
   `${frontendUrl}/auth/callback#token=${encodeURIComponent(token)}`;
 
-module.exports = { githubAuthUrl, githubCallback, redirectWithToken };
+const redirectWithError = (message) =>
+  `${frontendUrl}/auth/callback?error=${encodeURIComponent(message || "Sign-in failed")}`;
+
+module.exports = {
+  githubAuthUrl,
+  githubCallback,
+  googleAuthUrl,
+  googleCallback,
+  redirectWithToken,
+  redirectWithError,
+  upsertOauthUser,
+};

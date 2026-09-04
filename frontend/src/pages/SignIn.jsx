@@ -1,8 +1,8 @@
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import crystal from "../assets/brand/crystal-hero.png";
-import logo from "../assets/brand/logo-hex.png";
+import crystal from "../assets/brand/crystal-hero-hex.png";
+import logo from "../assets/brand/crystal-hero-hex.png";
 import "../styles/signup.css";
 
 const API = (import.meta.env.VITE_API_URL || "http://localhost:5001").replace(/\/$/, "");

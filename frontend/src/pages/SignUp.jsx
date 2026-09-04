@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import logo from "../assets/brand/logo-hex.png";
-import crystal from "../assets/brand/crystal-hero.png";
+import logo from "../assets/brand/crystal-hero-hex.png";
+import crystal from "../assets/brand/crystal-hero-hex.png";
 import avatarDefault from "../assets/brand/avatar-crystal.png";
 import iconLearn from "../assets/brand/icon-learn.png";
 import iconMentor from "../assets/brand/icon-mentor.png";

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import logo from "../assets/brand/logo-hex.png";
+import logo from "../assets/brand/crystal-hero-hex.png";
 import { rankImage } from "../lib/rankAssets";
 import { avatarSrc } from "../lib/avatarUrl";
 import { clearAllMentorThreads } from "../lib/mentorStorage";

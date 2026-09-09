@@ -1,4 +1,3 @@
-
 import { Navigate, Route, Routes } from "react-router-dom";
 import Landing from "./pages/Landing";
 import SignUp from "./pages/SignUp";
@@ -15,6 +14,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import Checkout from "./pages/Checkout";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import Certificate from "./pages/Certificate";
 
 export default function App() {
   return (
@@ -35,6 +35,8 @@ export default function App() {
       <Route path="/checkout/:courseId" element={<Checkout />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/terms" element={<Terms />} />
+      <Route path="/certificate/:track" element={<Certificate />} />
+      <Route path="/c/:code" element={<Certificate />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
-import crystal from "../assets/brand/crystal-hero.png";
+import crystal from "../assets/brand/crystal-hero-hex.png";
+import brain from "../assets/brand/mentor-brain.png";
 import {
   isBadMentorLine,
   readMentorThread,
@@ -18,6 +19,75 @@ const SUGGESTIONS = [
   "What is a wallet in crypto?",
   "How do the module quizzes work?",
 ];
+
+function BtcIcon() {
+  return (
+    <svg viewBox="0 0 32 32" aria-hidden="true">
+      <circle cx="16" cy="16" r="15" fill="#f7931a" />
+      <path
+        fill="#fff"
+        d="M18.2 16.7c1.7-.4 2.8-1.3 2.6-3.1-.2-1.4-1.2-2-2.6-2.3V9.1h-1.7v2.1c-.4 0-.9 0-1.3.1V9.1h-1.7v2.2c-.4 0-1.3 0-1.9 0v1.8s1 0 1 0c.5 0 .7.3.7.7v5.6c0 .1 0 .5-.4.5 0 0-1 0-1 0l-.3 2h2.1V23h1.7v-2.1c.5 0 .9 0 1.3 0V23h1.7v-2.2c2.2-.3 3.7-1.2 3.8-3.2.1-1.6-.7-2.4-2.3-2.9zm-4.1-3.8c1.7 0 2.6.5 2.6 1.8s-1.2 1.8-2.6 1.8v-3.6zm2.9 7.6c0 1.5-1.3 2-3 2v-4c1.8 0 3 .6 3 2z"
+      />
+    </svg>
+  );
+}
+
+function EthIcon() {
+  return (
+    <svg viewBox="0 0 32 32" aria-hidden="true">
+      <polygon points="16,3 16,13 25,16" fill="#8c8c8c" />
+      <polygon points="16,3 7,16 16,13" fill="#c0c0c0" />
+      <polygon points="16,18 16,29 25,17.5" fill="#8c8c8c" />
+      <polygon points="16,29 16,18 7,17.5" fill="#c0c0c0" />
+      <polygon points="16,13 25,16 16,18 7,16" fill="#3c3c3b" />
+    </svg>
+  );
+}
+
+function CrystalIcon() {
+  return (
+    <svg viewBox="0 0 32 32" aria-hidden="true">
+      <polygon
+        points="16,2 28,9 28,23 16,30 4,23 4,9"
+        fill="none"
+        stroke="#3b7aee"
+        strokeWidth="2"
+      />
+      <polygon points="16,8 22,12 22,20 16,24 10,20 10,12" fill="#3b7aee" />
+      <polygon points="16,8 10,12 16,16 22,12" fill="#e03a28" opacity="0.9" />
+    </svg>
+  );
+}
+
+function MathMark({ children }) {
+  return (
+    <svg viewBox="0 0 48 24" aria-hidden="true">
+      <text x="24" y="17" textAnchor="middle" fill="#9ec0ff" fontSize="13" fontFamily="Georgia, serif">
+        {children}
+      </text>
+    </svg>
+  );
+}
+
+function BrainField() {
+  return (
+    <div className="mn-brain" aria-hidden="true">
+      <span className="mn-brain-ring" />
+      <span className="mn-brain-ring delay" />
+      <div className="mn-brain-spin">
+        <img src={brain} alt="" />
+      </div>
+      <span className="mn-orbit o1"><BtcIcon /></span>
+      <span className="mn-orbit o2"><EthIcon /></span>
+      <span className="mn-orbit o3"><CrystalIcon /></span>
+      <span className="mn-orbit o4"><MathMark>π</MathMark></span>
+      <span className="mn-orbit o5"><MathMark>∑</MathMark></span>
+      <span className="mn-orbit o6"><MathMark>√</MathMark></span>
+      <span className="mn-orbit o7"><MathMark>E=mc²</MathMark></span>
+      <span className="mn-orbit o8"><MathMark>∞</MathMark></span>
+    </div>
+  );
+}
 
 function Skeleton() {
   return (
@@ -184,6 +254,7 @@ export default function Mentor() {
           <div className="mn-chat" ref={scroller}>
             {thread.length === 0 ? (
               <div className="mn-empty">
+                <BrainField />
                 <b>Start a conversation</b>
                 <p>Pick a prompt above or ask anything from the academy curriculum.</p>
               </div>

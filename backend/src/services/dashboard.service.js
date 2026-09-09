@@ -42,10 +42,21 @@ const getDashboardData = async (userId) => {
       ? rows.reduce((sum, item) => sum + Number(item.progress_percent), 0) / totalCourses
       : 0;
 
-  const [[certificateRow]] = await pool.query(
-    "SELECT COUNT(*) AS count FROM certificates WHERE user_id = ?",
-    [id]
-  );
+  let certCount = 0;
+  try {
+    const [[certificateRow]] = await pool.query(
+      "SELECT COUNT(*) AS count FROM track_certificates WHERE user_id = ?",
+      [id]
+    );
+    certCount = Number(certificateRow.count || 0);
+  } catch {
+    const [[certificateRow]] = await pool.query(
+      "SELECT COUNT(*) AS count FROM certificates WHERE user_id = ?",
+      [id]
+    );
+    certCount = Number(certificateRow.count || 0);
+  }
+
   const [[moduleRow]] = await pool.query(
     `SELECT COUNT(*) AS count
      FROM module_progress
@@ -90,7 +101,7 @@ const getDashboardData = async (userId) => {
       completed_courses: completedCourses,
       overall_progress: Number(overallProgress.toFixed(1)),
       total_study_minutes: Number(user.total_study_minutes || 0),
-      certificates_earned: Number(certificateRow.count || 0),
+      certificates_earned: certCount,
       current_streak: Number(user.current_streak || 0),
     },
     rank_progress: rankProgress,

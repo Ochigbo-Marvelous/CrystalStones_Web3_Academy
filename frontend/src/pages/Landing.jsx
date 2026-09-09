@@ -22,14 +22,18 @@ import whyConstellation from "../assets/brand/why.png";
 import crystalBasic from "../assets/brand/crystal-basic-blue.png";
 import crystalIntermediate from "../assets/brand/crystal-intermediate-gold.png";
 import crystalAdvanced from "../assets/brand/crystal-advanced-green.png";
+import brain from "../assets/brand/mentor-brain.png";
 import "../styles/landing.css";
+import "../styles/landing-mentor.css";
+
+const API = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 const SPOKES = [
   { id: "network", label: "Network", x: 50, y: 8, copy: "Public chains run because people participate. This academy does not pay you to stake." },
   { id: "gaming", label: "Gaming", x: 78, y: 18, copy: "On-chain games are an application class. Literacy first, play later." },
   { id: "travel", label: "Travel", x: 92, y: 38, copy: "A future rail in the wider Crystal Stones map. Not a booking desk here." },
-  { id: "causes", label: "Causes", x: 92, y: 62, copy: "Support work you chose. Always verify the destination address yourself." },
-  { id: "rwa", label: "RWA", x: 78, y: 82, copy: "Real-world assets are a claim to verify — not a proven vault." },
+  { id: "causes", label: "CEX", x: 92, y: 62, copy: "A CEX is a company ledger. It is not the blockchain.r4" },
+  { id: "rwa", label: "RWA", x: 78, y: 82, copy: "Real-world assets are a claim to verify not a proven vault." },
   { id: "markets", label: "Markets", x: 50, y: 92, copy: "A CEX is a company ledger. It is not the blockchain." },
   { id: "education", label: "Education", x: 22, y: 82, copy: "Structured tracks, Mentor, progress, certificates. Not a buy signal." },
   { id: "commerce", label: "Commerce", x: 8, y: 62, copy: "Spend only where a merchant actually accepts the rail you are using." },
@@ -118,6 +122,57 @@ function CapIcon() {
   );
 }
 
+function BtcIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="11" fill="#f7931a" />
+      <path fill="#fff" d="M15.2 11.3c.7-.4 1.1-1 1-1.8-.2-1.2-1.3-1.6-2.7-1.7V6.3h-1.4v1.4H11V6.3H9.6v1.5H7.8v1.5h1.1c.4 0 .6.2.6.6v5.3c0 .3-.2.5-.5.5H7.8V17h1.8v1.5H11V17h1.1v1.5h1.4V17c1.6-.1 2.8-.7 3-2 .1-1-.3-1.6-1.3-2zM11 9.4h1.6c.7 0 1.2.2 1.3.8.1.5-.3.9-1.1.9H11V9.4zm2 5.8H11v-1.9h2.1c.8 0 1.3.3 1.4.9.1.6-.4 1-1.5 1z" />
+    </svg>
+  );
+}
+
+function EthIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#627eea" d="M12 2.2 5.6 12.3 12 16l6.4-3.7L12 2.2z" />
+      <path fill="#8ea0f0" d="M12 16 5.6 12.3 12 21.8l6.4-9.5L12 16z" />
+    </svg>
+  );
+}
+
+function CrystalCoin() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <polygon points="12,2 21,7.5 21,16.5 12,22 3,16.5 3,7.5" fill="#0b1422" stroke="#3b7aee" strokeWidth="1.6" />
+      <polygon points="12,6 16.5,8.6 16.5,13.4 12,16 7.5,13.4 7.5,8.6" fill="none" stroke="#e03a28" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
+function PiIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 7h14M9 7v11M15 7c3 0 3 5 0 8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function SumIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M18 5H7l7 7-7 7h11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function RootIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 13h3l2.5 6L14 5h6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 const pinScroll = (el, count, setPin, setStep) => {
   if (!el) return undefined;
 
@@ -169,10 +224,16 @@ export default function Landing() {
   const [gate, setGate] = useState(false);
   const [newsEmail, setNewsEmail] = useState("");
   const [newsNote, setNewsNote] = useState("");
+  const [newsBusy, setNewsBusy] = useState(false);
+  const [mentorOpen, setMentorOpen] = useState(false);
+  const [mentorInput, setMentorInput] = useState("");
+  const [mentorBusy, setMentorBusy] = useState(false);
+  const [mentorChat, setMentorChat] = useState([]);
   const growthRef = useRef(null);
   const ranksRef = useRef(null);
   const whyRef = useRef(null);
   const spaceRef = useRef(null);
+  const mentorBox = useRef(null);
   const active = SPOKES.find((s) => s.id === spoke) || SPOKES[6];
 
   useEffect(() => {
@@ -196,6 +257,70 @@ export default function Landing() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    if (mentorBox.current) {
+      mentorBox.current.scrollTop = mentorBox.current.scrollHeight;
+    }
+  }, [mentorChat, mentorBusy]);
+
+  const subscribeNews = async (e) => {
+    e.preventDefault();
+    const email = newsEmail.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setNewsNote("Enter a valid email.");
+      return;
+    }
+    setNewsBusy(true);
+    setNewsNote("");
+    try {
+      const res = await fetch(`${API}/api/newsletter`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        setNewsNote(data.message || "Could not subscribe.");
+        return;
+      }
+      setNewsNote(data.message || "You're on the list.");
+      setNewsEmail("");
+    } catch {
+      setNewsNote("Could not reach the academy. Try again.");
+    } finally {
+      setNewsBusy(false);
+    }
+  };
+
+  const askLandingMentor = async (e) => {
+    e.preventDefault();
+    const question = mentorInput.trim();
+    if (question.length < 3 || mentorBusy) return;
+    setMentorInput("");
+    setMentorChat((rows) => [...rows, { role: "user", text: question }]);
+    setMentorBusy(true);
+    try {
+      const res = await fetch(`${API}/api/guide/ask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question }),
+      });
+      const data = await res.json().catch(() => ({}));
+      const answer =
+        data?.data?.answer ||
+        data.message ||
+        "Crystal Mentor could not finish that answer just now.";
+      setMentorChat((rows) => [...rows, { role: "mentor", text: answer }]);
+    } catch {
+      setMentorChat((rows) => [
+        ...rows,
+        { role: "mentor", text: "Could not reach Crystal Mentor. Start the backend, then try again." },
+      ]);
+    } finally {
+      setMentorBusy(false);
+    }
+  };
 
   return (
     <div className="lp">
@@ -463,7 +588,7 @@ export default function Landing() {
         <div className="lp-foot-box">
           <div className="lp-foot-cta">
             <div className="lp-foot-brand">
-              <img src={crystalBasic} alt="" />
+              <img src={logo} alt="" />
               <div>
                 <h2>Built by Crystal Stones</h2>
                 <p>Real builders. Real education. Real Web3.</p>
@@ -487,7 +612,7 @@ export default function Landing() {
             <div>
               <small className="is-blue">Academy</small>
               <a href="#courses">Courses</a>
-              <button type="button" onClick={() => setGate(true)}>Mentor</button>
+              <button type="button" onClick={() => setMentorOpen(true)}>Mentor</button>
               <a href="#ranks">Ranks</a>
             </div>
             <div>
@@ -500,19 +625,7 @@ export default function Landing() {
               <a href="https://t.me/CrystalStones" target="_blank" rel="noopener noreferrer">Telegram</a>
               <a href="https://x.com/crystalstones01" target="_blank" rel="noopener noreferrer">X (Twitter)</a>
             </div>
-            <form
-              className="lp-news"
-              onSubmit={(e) => {
-                e.preventDefault();
-                const email = newsEmail.trim();
-                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                  setNewsNote("Enter a valid email.");
-                  return;
-                }
-                setNewsNote("Saved on this device. List backend comes later.");
-                setNewsEmail("");
-              }}
-            >
+            <form className="lp-news" onSubmit={subscribeNews}>
               <small className="is-red">Newsletter</small>
               <p>Insights. Drops. Lessons. Stay crystal clear.</p>
               <div className="lp-news-row">
@@ -522,8 +635,9 @@ export default function Landing() {
                   onChange={(e) => setNewsEmail(e.target.value)}
                   placeholder="your@email.com"
                   maxLength={120}
+                  disabled={newsBusy}
                 />
-                <button type="submit" aria-label="Subscribe">
+                <button type="submit" aria-label="Subscribe" disabled={newsBusy}>
                   <img src={logo} alt="" />
                 </button>
               </div>
@@ -563,6 +677,67 @@ export default function Landing() {
           </div>
         </div>
       ) : null}
+
+      {mentorOpen ? (
+        <div className="lp-fab-panel" role="dialog" aria-label="Crystal Mentor">
+          <div className="lp-fab-head">
+            <img src={logo} alt="" />
+            <span>
+              <strong>Crystal Mentor</strong>
+              <small>Ask about the academy, tracks, or Crystal Stones. Education only.</small>
+            </span>
+          </div>
+          <div className="lp-fab-chat" ref={mentorBox}>
+            {mentorChat.length === 0 ? (
+              <div className="lp-fab-empty">
+                <div className="lp-fab-brain" aria-hidden="true">
+                  <div className="lp-fab-brain-spin">
+                    <img src={brain} alt="" />
+                  </div>
+                  <span className="lp-fab-particle p1"><BtcIcon /></span>
+                  <span className="lp-fab-particle p2"><EthIcon /></span>
+                  <span className="lp-fab-particle p3"><CrystalCoin /></span>
+                  <span className="lp-fab-particle p4"><PiIcon /></span>
+                  <span className="lp-fab-particle p5"><SumIcon /></span>
+                  <span className="lp-fab-particle p6"><RootIcon /></span>
+                </div>
+                <p>
+                  No account needed. Ask about Basic, Intermediate, checkout, wallets, or Crystal Stones.
+                  Not a buy signal.
+                </p>
+              </div>
+            ) : (
+              mentorChat.map((item, i) => (
+                <div key={`${item.role}-${i}`} className={`lp-fab-bubble ${item.role}`}>
+                  {item.text}
+                </div>
+              ))
+            )}
+            {mentorBusy ? <div className="lp-fab-bubble mentor">Thinking…</div> : null}
+          </div>
+          <form className="lp-fab-form" onSubmit={askLandingMentor}>
+            <input
+              value={mentorInput}
+              onChange={(e) => setMentorInput(e.target.value)}
+              placeholder="Ask Crystal Mentor..."
+              maxLength={500}
+              disabled={mentorBusy}
+            />
+            <button type="submit" disabled={mentorBusy}>
+              {mentorBusy ? "…" : "➤"}
+            </button>
+          </form>
+        </div>
+      ) : null}
+
+      <button
+        type="button"
+        className={`lp-fab${mentorOpen ? " is-open" : ""}`}
+        aria-label={mentorOpen ? "Close Crystal Mentor" : "Open Crystal Mentor"}
+        onClick={() => setMentorOpen((open) => !open)}
+      >
+        {mentorOpen ? <span>✕</span> : <img src={logo} alt="" />}
+      </button>
     </div>
   );
 }

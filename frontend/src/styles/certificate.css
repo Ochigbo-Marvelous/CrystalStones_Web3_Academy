@@ -1,0 +1,253 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,600;1,700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap");
+
+.cert-page {
+  min-height: 100dvh;
+  background: #070b16;
+  color: #eef3ff;
+  font-family: "Plus Jakarta Sans", Inter, sans-serif;
+}
+
+.cert-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px clamp(16px, 3vw, 36px);
+}
+
+.cert-bar a,
+.cert-bar button {
+  color: #c5d0e0;
+  background: transparent;
+  border: 1px solid #2a3d5c;
+  border-radius: 10px;
+  height: 36px;
+  padding: 0 12px;
+  text-decoration: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.cert-error {
+  max-width: 640px;
+  margin: 48px auto;
+  color: #9aa8bd;
+  text-align: center;
+}
+
+.cert-sheet {
+  position: relative;
+  display: grid;
+  grid-template-columns: 0.9fr 1.25fr;
+  width: min(1180px, calc(100% - 40px));
+  margin: 8px auto 40px;
+  min-height: 620px;
+  overflow: hidden;
+  border-radius: 6px;
+  background:
+    radial-gradient(900px 420px at 78% 12%, rgba(37, 99, 214, 0.16), transparent 55%),
+    #07111f;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+}
+
+.cert-sheet.is-gold {
+  background:
+    radial-gradient(900px 420px at 78% 12%, rgba(212, 168, 58, 0.16), transparent 55%),
+    #07111f;
+}
+
+.cert-sheet::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: #e03a28;
+}
+
+.cert-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 40px 16px;
+}
+
+.cert-radar {
+  position: absolute;
+  width: min(420px, 88%);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px dashed rgba(90, 160, 255, 0.28);
+  box-shadow:
+    0 0 0 28px rgba(37, 99, 214, 0.06),
+    0 0 0 64px rgba(37, 99, 214, 0.04);
+}
+
+.cert-sheet.is-gold .cert-radar {
+  border-color: rgba(212, 168, 58, 0.35);
+  box-shadow:
+    0 0 0 28px rgba(212, 168, 58, 0.08),
+    0 0 0 64px rgba(212, 168, 58, 0.04);
+}
+
+.cert-art img {
+  position: relative;
+  z-index: 1;
+  width: min(280px, 72%);
+  height: auto;
+  filter: drop-shadow(0 18px 40px rgba(0, 0, 0, 0.45));
+}
+
+.cert-copy {
+  padding: 48px 48px 36px 24px;
+  text-align: center;
+}
+
+.cert-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #9ec0ff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.cert-brand img { width: 22px; height: 22px; }
+
+.cert-kicker {
+  margin: 22px 0 6px;
+  color: #7f93b3;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+}
+
+.cert-copy h1 {
+  margin: 0;
+  font-size: clamp(34px, 4.2vw, 58px);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
+
+.cert-sheet.is-gold h1 { color: #f0c14b; }
+.cert-copy h1 { color: #f4f7ff; }
+
+.cert-line {
+  margin: 14px 0 8px;
+  color: #8aa0c0;
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  font-weight: 700;
+}
+
+.cert-name {
+  margin: 0;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(40px, 5vw, 64px);
+  font-style: italic;
+  font-weight: 600;
+  color: #e8eefc;
+  line-height: 1.05;
+}
+
+.cert-id {
+  margin: 10px 0 22px;
+  color: #7f93b3;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+}
+
+.cert-id b { color: #c5d0e0; font-weight: 700; }
+
+.cert-done {
+  margin: 0 0 10px;
+  color: #9ec0ff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+
+.cert-sheet.is-gold .cert-done { color: #e8c36a; }
+
+.cert-focus {
+  margin: 0 auto 28px;
+  max-width: 520px;
+  color: #8aa0c0;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  line-height: 1.55;
+}
+
+.cert-meta {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 16px;
+  max-width: 420px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.cert-meta small {
+  display: block;
+  color: #7f93b3;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+}
+
+.cert-meta b {
+  display: block;
+  margin-top: 4px;
+  font-size: 16px;
+}
+
+.cert-qr {
+  width: 92px;
+  height: 92px;
+  padding: 6px;
+  background: #fff;
+  border-radius: 4px;
+}
+
+.cert-qr img { width: 100%; height: 100%; display: block; }
+
+.cert-hex {
+  margin-top: 6px;
+  color: #8aa0c0;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-align: right;
+}
+
+.cert-foot {
+  margin: 28px 0 0;
+  color: #6d7d96;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+}
+
+@media (max-width: 900px) {
+  .cert-sheet {
+    grid-template-columns: 1fr;
+    width: calc(100% - 20px);
+  }
+  .cert-art { min-height: 280px; }
+  .cert-copy { padding: 24px 18px 28px; }
+  .cert-meta { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+  .cert-hex { text-align: center; }
+}
+
+@media print {
+  .cert-bar { display: none; }
+  .cert-page { background: #07111f; }
+  .cert-sheet {
+    width: 100%;
+    margin: 0;
+    box-shadow: none;
+    min-height: 100vh;
+    border-radius: 0;
+  }
+  @page { size: landscape; margin: 0; }
+}

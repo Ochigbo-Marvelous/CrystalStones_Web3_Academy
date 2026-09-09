@@ -304,7 +304,7 @@ export default function Achievements() {
     Promise.all([
       fetch(`${API}/api/auth/me`, { headers }).then((res) => res.json()),
       fetch(`${API}/api/achievements`, { headers }).then((res) => res.json()),
-      fetch(`${API}/api/profile/certificates`, { headers })
+      fetch(`${API}/api/certificates`, { headers })
         .then((res) => res.json())
         .catch(() => ({ data: [] })),
     ])
@@ -358,8 +358,8 @@ export default function Achievements() {
 
   const certFor = (track) =>
     certs.find((row) => {
-      const level = String(row.level || row.course_level || "").toLowerCase();
-      return track.aliases.includes(level);
+      const key = String(row.track || row.level || row.course_level || "").toLowerCase();
+      return key === track.key || track.aliases.includes(key);
     });
 
   if (!ready) return <Skeleton />;
@@ -435,7 +435,13 @@ export default function Achievements() {
                     type="button"
                     className="ach-cert-btn"
                     disabled={!cert}
-                    onClick={() => setToast("Certificate download comes in the next pass.")}
+                    onClick={() => {
+                      if (!cert) {
+                        setToast(soon ? "Advanced is not live yet." : "Finish this track to unlock the diploma.");
+                        return;
+                      }
+                      navigate(`/certificate/${track.key}`);
+                    }}
                   >
                     {cert ? "Download" : soon ? "Coming soon" : "Locked"}
                   </button>

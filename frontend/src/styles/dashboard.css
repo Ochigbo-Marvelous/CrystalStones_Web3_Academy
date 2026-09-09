@@ -1230,3 +1230,102 @@
     width: 92px;
   }
 }
+
+.db-mentor-card {
+  min-height: 460px;
+}
+
+.db-chat {
+  min-height: 280px;
+  max-height: 340px;
+}
+
+.db-chat-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 260px;
+  margin: 0;
+  text-align: center;
+}
+
+.db-chat-empty p {
+  margin: 0;
+  max-width: 280px;
+  color: #8b97ad;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.db-brain {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  margin: 0 auto;
+  perspective: 520px;
+}
+
+.db-brain-spin {
+  position: absolute;
+  inset: 22px;
+  transform-style: preserve-3d;
+  animation: db-brain-yaw 7.5s linear infinite;
+}
+
+.db-brain-spin img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 14px #3b7aee) drop-shadow(0 0 10px #e03a28);
+}
+
+.db-particle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  color: #9ec0ff;
+  animation: db-brain-in 3.4s ease-in-out infinite;
+}
+
+.db-particle.p1 { --x: -62px; --y: -48px; animation-delay: 0s; color: #f7931a; }
+.db-particle.p2 { --x: 58px; --y: -42px; animation-delay: 0.45s; color: #627eea; }
+.db-particle.p3 { --x: -70px; --y: 18px; animation-delay: 0.9s; color: #3b7aee; }
+.db-particle.p4 { --x: 68px; --y: 22px; animation-delay: 1.35s; color: #e03a28; }
+.db-particle.p5 { --x: -20px; --y: 62px; animation-delay: 1.8s; color: #9ec0ff; }
+.db-particle.p6 { --x: 18px; --y: -70px; animation-delay: 2.25s; color: #ffd36a; }
+
+.db-particle svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+  filter: drop-shadow(0 0 6px currentColor);
+}
+
+@keyframes db-brain-yaw {
+  from { transform: rotateY(-22deg); }
+  50% { transform: rotateY(22deg); }
+  to { transform: rotateY(-22deg); }
+}
+
+@keyframes db-brain-in {
+  0% { opacity: 0; transform: translate(var(--x), var(--y)) scale(0.35); }
+  55% { opacity: 1; transform: translate(0, 0) scale(1); }
+  100% { opacity: 0; transform: translate(0, 8px) scale(0.2); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .db-brain-spin,
+  .db-particle { animation: none; }
+}
+
+@media (max-width: 900px) {
+  .db-mentor-card { min-height: 400px; }
+  .db-chat { min-height: 240px; max-height: 280px; }
+  .db-brain { width: 150px; height: 150px; }
+}

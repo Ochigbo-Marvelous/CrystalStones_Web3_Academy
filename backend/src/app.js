@@ -24,6 +24,9 @@ const achievementRoutes = require("./routes/achievement.routes");
 const mentorRoutes = require("./routes/mentor.routes");
 const paymentRoutes = require("./routes/payment.routes");
 const leaderboardRoutes = require("./routes/leaderboard.routes");
+const newsletterRoutes = require("./routes/newsletter.routes");
+const guideRoutes = require("./routes/guide.routes");
+const certificateRoutes = require("./routes/certificate.routes");
 
 const app = express();
 const serveFrontend = process.env.SERVE_FRONTEND === "true";
@@ -97,6 +100,7 @@ app.use("/api/auth/signup", authLimiter);
 app.use("/api/auth/email/send-code", emailLimiter);
 app.use("/api/auth/password/forgot", emailLimiter);
 app.use("/api/mentor", mentorIpLimiter);
+app.use("/api/guide", mentorIpLimiter);
 
 app.use(cookieParser());
 app.use(
@@ -142,6 +146,9 @@ app.use("/api/achievements", achievementRoutes);
 app.use("/api/mentor", mentorRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
+app.use("/api/newsletter", newsletterRoutes);
+app.use("/api/guide", guideRoutes);
+app.use("/api/certificates", certificateRoutes);
 
 if (serveFrontend) {
   const frontendDist = path.join(__dirname, "../../frontend/dist");

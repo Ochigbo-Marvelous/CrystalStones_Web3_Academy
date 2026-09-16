@@ -171,12 +171,23 @@ body,
 }
 
 .su-avatar img {
+  display: block;
   width: 84px;
   height: 84px;
+  box-sizing: border-box;
+  padding: 0;
   object-fit: cover;
+  object-position: center;
   border-radius: 50%;
   border: 2px solid #2a3b5d;
-  background: #081018;
+  background: #2f7bff;
+  overflow: hidden;
+}
+
+@supports (object-view-box: inset(0%)) {
+  .su-avatar img {
+    object-view-box: inset(14%);
+  }
 }
 
 .su-avatar-btn {
@@ -248,6 +259,41 @@ body,
 
 .su-rule.ok {
   color: #3dcf7a;
+}
+
+.su-terms {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 2px 0 14px;
+  color: #9aa6bb;
+  font-size: 12px;
+  line-height: 1.5;
+  cursor: pointer;
+  user-select: none;
+  text-align: left;
+}
+
+.su-terms input {
+  appearance: auto;
+  -webkit-appearance: checkbox;
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: #1e6bff;
+  cursor: pointer;
+}
+
+.su-terms a {
+  color: #3d8bff;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.su-terms a:hover {
+  color: #ff3b3b;
 }
 
 .su-primary {
@@ -443,4 +489,14 @@ a.su-oauth {
   .su-grid-login .su-card {
     margin-top: 24px;
   }
+}
+
+html {
+  color-scheme: dark;
+}
+
+.su-card h1,
+.su-card h2,
+.su-card h3 {
+  color: #f4f7ff !important;
 }

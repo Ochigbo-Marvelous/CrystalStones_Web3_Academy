@@ -1,0 +1,139 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap");
+
+.eb {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 32px 20px;
+  box-sizing: border-box;
+  overflow-x: clip;
+  background-color: #070b16;
+  background-image:
+    linear-gradient(rgba(37, 99, 214, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 99, 214, 0.12) 1px, transparent 1px);
+  background-size: 56px 56px;
+  color: #eef3ff;
+  font-family: "Plus Jakarta Sans", Inter, "Segoe UI", sans-serif;
+}
+
+.eb a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.eb-shell {
+  width: min(560px, 100%);
+  padding: 28px 24px 32px;
+  border: 1px solid #243044;
+  border-radius: 22px;
+  background: rgba(10, 16, 28, 0.92);
+  box-shadow:
+    0 0 0 1px rgba(224, 42, 36, 0.18) inset,
+    0 24px 60px rgba(0, 0, 0, 0.45);
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.eb-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.eb-brand img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.eb-brand strong,
+.eb-brand small {
+  display: block;
+}
+
+.eb-brand strong {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #eef3ff;
+}
+
+.eb-brand small {
+  margin-top: 1px;
+  color: #7f8ba3;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.eb-kicker {
+  margin: 0 0 8px;
+  color: #e03a28;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.eb h1 {
+  margin: 0;
+  font-size: clamp(32px, 6vw, 48px);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+  color: #eef3ff;
+}
+
+.eb h1 em {
+  font-style: normal;
+  color: #3b7aee;
+}
+
+.eb-lead {
+  margin: 14px 0 0;
+  color: #9aa8bd;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.eb-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.eb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 12px;
+  background: #2563d6;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(224, 42, 36, 0.38);
+  box-sizing: border-box;
+}
+
+.eb-btn.ghost {
+  background: transparent;
+  border: 1px solid #2c3c56;
+  color: #e8eef8;
+  box-shadow: none;
+}
+
+@media (max-width: 600px) {
+  .eb-shell {
+    padding: 22px 16px 24px;
+  }
+
+  .eb-btn {
+    flex: 1 1 100%;
+  }
+}

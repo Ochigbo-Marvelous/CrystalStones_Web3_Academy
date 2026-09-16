@@ -36,4 +36,18 @@ const protect = asyncHandler(async (req, res, next) => {
   }
 });
 
-module.exports = { protect };
+const requireAdmin = asyncHandler(async (req, res, next) => {
+  const role = String(req.user?.role || "")
+    .trim()
+    .toLowerCase();
+
+  if (role !== "admin") {
+    throw new ApiError(
+      403,
+      `Admin only. Signed in as ${req.user?.email || "unknown"} with role "${req.user?.role || "none"}".`
+    );
+  }
+  next();
+});
+
+module.exports = { protect, requireAdmin };

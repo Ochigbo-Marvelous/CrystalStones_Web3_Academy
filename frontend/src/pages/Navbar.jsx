@@ -50,6 +50,14 @@ function IconUser() {
   );
 }
 
+function IconShield() {
+  return (
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M12 3 5 6v6c0 5 3.4 8.4 7 9.5 3.6-1.1 7-4.5 7-9.5V6l-7-3Z" />
+    </svg>
+  );
+}
+
 const readStoredUser = () => {
   try {
     return JSON.parse(localStorage.getItem("user") || "null");
@@ -89,6 +97,7 @@ export default function Navbar({ user }) {
   const rank = user?.current_rank || stored?.current_rank || "Novice";
   const photo = avatarSrc(user?.avatar || stored?.avatar);
   const initial = (name || "U").slice(0, 1).toUpperCase();
+  const isAdmin = String(user?.role || stored?.role || "").toLowerCase() === "admin";
 
   return (
     <header className={`db-nav${open ? " is-open" : ""}`}>
@@ -127,6 +136,11 @@ export default function Navbar({ user }) {
         <NavLink to="/profile">
           <IconUser /> Profile
         </NavLink>
+        {isAdmin ? (
+          <NavLink to="/admin">
+            <IconShield /> Admin
+          </NavLink>
+        ) : null}
       </nav>
 
       <div className="db-user">

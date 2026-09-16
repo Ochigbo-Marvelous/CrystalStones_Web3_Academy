@@ -27,6 +27,7 @@ const leaderboardRoutes = require("./routes/leaderboard.routes");
 const newsletterRoutes = require("./routes/newsletter.routes");
 const guideRoutes = require("./routes/guide.routes");
 const certificateRoutes = require("./routes/certificate.routes");
+const adminRoutes = require("./routes/admin.routes");
 
 const app = express();
 const serveFrontend = process.env.SERVE_FRONTEND === "true";
@@ -149,6 +150,7 @@ app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/newsletter", newsletterRoutes);
 app.use("/api/guide", guideRoutes);
 app.use("/api/certificates", certificateRoutes);
+app.use("/api/admin", adminRoutes);
 
 if (serveFrontend) {
   const frontendDist = path.join(__dirname, "../../frontend/dist");

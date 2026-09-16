@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import logo from "../assets/brand/crystal-hero-hex.png";
 import crystal from "../assets/brand/crystal-hero-hex.png";
-import avatarDefault from "../assets/brand/avatar-crystal.png";
+import avatarDefault from "../assets/brand/avatar-icon.png";
 import iconLearn from "../assets/brand/icon-learn.png";
 import iconMentor from "../assets/brand/icon-mentor.png";
 import iconProgress from "../assets/brand/icon-progress.png";
@@ -83,6 +83,7 @@ export default function SignUp() {
   const [loading, setLoading] = useState(false);
   const [sendingCode, setSendingCode] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [accepted, setAccepted] = useState(false);
 
   const rules = useMemo(() => {
     const p = form.password;
@@ -101,6 +102,7 @@ export default function SignUp() {
     form.username.trim() &&
     emailTicket &&
     rules.every((r) => r.ok) &&
+    accepted &&
     !loading;
 
   const set = (key) => (e) => {
@@ -245,6 +247,27 @@ export default function SignUp() {
     }
   };
 
+  const termsRow = (
+    <label className={`su-terms${accepted ? " is-on" : ""}`}>
+      <input
+        type="checkbox"
+        checked={accepted}
+        onChange={(e) => setAccepted(e.target.checked)}
+      />
+      <span>
+        I accept the{" "}
+        <Link to="/terms" target="_blank" rel="noreferrer">
+          Terms of Service
+        </Link>{" "}
+        and{" "}
+        <Link to="/privacy" target="_blank" rel="noreferrer">
+          Privacy Policy
+        </Link>
+        .
+      </span>
+    </label>
+  );
+
   return (
     <div className="su">
       <div className="su-grid">
@@ -357,6 +380,8 @@ export default function SignUp() {
             {info ? <p className="su-note">{info}</p> : null}
             {error ? <p className="su-error">{error}</p> : null}
 
+            {termsRow}
+
             <button className="su-primary" type="submit" disabled={!ready}>
               {loading ? "CREATING..." : "CREATE ACCOUNT"}
             </button>
@@ -390,7 +415,6 @@ export default function SignUp() {
           <p className="su-foot">
             Already have an account? <Link to="/signin">SIGN IN</Link>
           </p>
-          <p className="su-legal">By continuing, you agree to the Terms of Service and Privacy Policy.</p>
         </div>
 
         <div className="su-crystal">

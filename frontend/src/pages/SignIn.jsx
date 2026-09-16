@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import crystal from "../assets/brand/crystal-hero-hex.png";
@@ -6,6 +5,9 @@ import logo from "../assets/brand/crystal-hero-hex.png";
 import "../styles/signup.css";
 
 const API = (import.meta.env.VITE_API_URL || "http://localhost:5001").replace(/\/$/, "");
+
+const homeFor = (user) =>
+  String(user?.role || "").trim().toLowerCase() === "admin" ? "/admin" : "/dashboard";
 
 const oauthUrl = (path) => {
   const fallback = "http://localhost:5001";
@@ -80,7 +82,7 @@ export default function SignIn() {
 
       localStorage.setItem("token", data.data.token);
       localStorage.setItem("user", JSON.stringify(data.data.user));
-      window.location.href = "/dashboard";
+      window.location.href = homeFor(data.data.user);
     } catch (err) {
       setError(err.message || "Login failed");
     } finally {

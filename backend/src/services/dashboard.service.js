@@ -8,7 +8,7 @@ const getDashboardData = async (userId) => {
   }
 
   const [users] = await pool.query(
-    `SELECT id, full_name, username, email, avatar, current_rank,
+    `SELECT id, full_name, username, email, avatar, role, current_rank,
             total_study_minutes, current_streak, longest_streak
      FROM users WHERE id = ? LIMIT 1`,
     [id]
@@ -91,7 +91,9 @@ const getDashboardData = async (userId) => {
       id: user.id,
       full_name: user.full_name,
       username: user.username,
+      email: user.email,
       avatar: user.avatar,
+      role: user.role || "student",
       current_rank: user.current_rank,
       current_streak: Number(user.current_streak || 0),
       longest_streak: Number(user.longest_streak || 0),

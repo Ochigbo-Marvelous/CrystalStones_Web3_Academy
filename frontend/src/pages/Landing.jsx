@@ -32,7 +32,7 @@ const SPOKES = [
   { id: "network", label: "Network", x: 50, y: 8, copy: "Public chains run because people participate. This academy does not pay you to stake." },
   { id: "gaming", label: "Gaming", x: 78, y: 18, copy: "On-chain games are an application class. Literacy first, play later." },
   { id: "travel", label: "Travel", x: 92, y: 38, copy: "A future rail in the wider Crystal Stones map. Not a booking desk here." },
-  { id: "causes", label: "CEX", x: 92, y: 62, copy: "A CEX is a company ledger. It is not the blockchain.r4" },
+  { id: "causes", label: "CEX", x: 92, y: 62, copy: "A CEX is a company ledger. It is not the blockchain." },
   { id: "rwa", label: "RWA", x: 78, y: 82, copy: "Real-world assets are a claim to verify not a proven vault." },
   { id: "markets", label: "Markets", x: 50, y: 92, copy: "A CEX is a company ledger. It is not the blockchain." },
   { id: "education", label: "Education", x: 22, y: 82, copy: "Structured tracks, Mentor, progress, certificates. Not a buy signal." },

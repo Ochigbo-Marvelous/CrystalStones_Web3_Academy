@@ -1608,3 +1608,122 @@
   .lp-fab-brain-spin,
   .lp-fab-particle { animation: none; }
 }
+
+@media (max-width: 1100px) {
+  .lp-growth,
+  .lp-ranks,
+  .lp-why {
+    height: auto !important;
+  }
+
+  .lp-growth-sticky,
+  .lp-ranks-sticky,
+  .lp-why-sticky {
+    position: relative !important;
+    top: auto !important;
+    bottom: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .lp-growth-sticky.is-pin,
+  .lp-growth-sticky.is-end,
+  .lp-ranks-sticky.is-pin,
+  .lp-ranks-sticky.is-end,
+  .lp-why-sticky.is-pin,
+  .lp-why-sticky.is-end {
+    position: relative !important;
+    top: auto !important;
+    bottom: auto !important;
+  }
+
+  .lp-orbit,
+  .lp-compass,
+  .lp-hero-art,
+  .lp-spoke,
+  .lp-spoke span {
+    overflow: visible !important;
+  }
+
+  .lp-spoke {
+    white-space: nowrap;
+    max-width: none;
+  }
+
+  .lp-growth-sticky::before,
+  .lp-growth-sticky::after,
+  .lp-ranks-sticky::before,
+  .lp-ranks-sticky::after,
+  .lp-why-sticky::before,
+  .lp-why-sticky::after,
+  .lp-courses::before,
+  .lp-courses::after {
+    animation: none !important;
+    opacity: 0.25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-crystal img,
+  .lp-hero img {
+    animation: none !important;
+  }
+}
+
+html {
+  color-scheme: dark;
+}
+
+.lp-hero-copy h1,
+.lp-hero h1,
+.lp h1,
+.lp h2 {
+  color: #eef3ff !important;
+}
+
+.lp-hero-copy em,
+.lp-hero h1 em {
+  color: #3b7aee !important;
+}
+
+@media (max-width: 1100px) {
+  .lp-caption {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: flex-start !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+    white-space: normal !important;
+  }
+
+  .lp-caption p,
+  .lp-caption span {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.45;
+  }
+
+  .lp-caption b {
+    white-space: normal !important;
+  }
+}
+
+@media (max-width: 1100px) {
+  .lp-news input,
+  .lp-news-row input,
+  .lp-fab-form input {
+    font-size: 16px !important;
+    line-height: 1.25;
+    transform: none !important;
+  }
+}

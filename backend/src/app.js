@@ -41,9 +41,18 @@ app.use(
 app.use(
   cors({
     origin: (origin, callback) => {
+      const allowed = new Set(
+        [
+          config.frontendUrl,
+          process.env.FRONTEND_URL,
+          config.nodeEnv === "development" ? "http://localhost:5173" : "",
+          config.nodeEnv === "development" ? "http://127.0.0.1:5173" : "",
+        ]
+          .filter(Boolean)
+          .map((item) => String(item).replace(/\/$/, ""))
+      );
       if (!origin) return callback(null, true);
-      if (origin === config.frontendUrl) return callback(null, true);
-      if (serveFrontend) return callback(null, origin);
+      if (allowed.has(origin)) return callback(null, true);
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,

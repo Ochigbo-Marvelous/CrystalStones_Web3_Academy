@@ -219,10 +219,9 @@ export default function Dashboard() {
         if (boardJson?.success && boardJson.data) setBoard(boardJson.data);
       })
       .catch((err) => {
-        if (String(err.message).toLowerCase().includes("not authorized")) {
-          localStorage.removeItem("token");
-          navigate("/signin", { replace: true });
-          return;
+          if (String(err.message).toLowerCase().includes("not authorized")) {
+           setError(err.message || "Could not load dashboard");
+            return;
         }
         setError(err.message || "Could not load dashboard");
       })

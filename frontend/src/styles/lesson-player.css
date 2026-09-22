@@ -552,3 +552,22 @@
     font-size: 12px;
   }
 }
+
+.lp-hero,
+.lp-main {
+  min-height: 0 !important;
+  height: auto !important;
+  flex: none !important;
+}
+
+.lp-video:empty,
+.lp-video:not(:has(iframe)),
+video.lp-file:not([src]),
+video.lp-file[src=""],
+video.lp-file[src="null"],
+video.lp-file[src="undefined"] {
+  display: none !important;
+  padding: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+}

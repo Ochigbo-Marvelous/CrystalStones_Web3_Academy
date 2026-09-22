@@ -77,7 +77,7 @@ const sendSignupCode = async (email) => {
     await otpService.sendCode({
       email: normalized,
       purpose: "signup",
-      subject: "Your Crystal Stones Academy code",
+      subject: "Your Crystal Web3 Academy code",
       line: "Use this code to verify your email and create your account.",
     });
   }
@@ -99,7 +99,7 @@ const sendResetCode = async (email) => {
     await otpService.sendCode({
       email: normalized,
       purpose: "reset",
-      subject: "Reset your Crystal Stones Academy password",
+      subject: "Reset your Crystal Web3 Academy password",
       line: "Use this code to reset your password.",
     });
     await securityLogger("PASSWORD_RESET_REQUESTED", { userId: users[0].id });

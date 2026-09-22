@@ -1,5 +1,6 @@
 const express = require("express");
 const authController = require("../controllers/auth.controller");
+const sessionController = require("../controllers/session.controller");
 const validate = require("../middlewares/validate");
 const {
   signupSchema,
@@ -16,6 +17,7 @@ router.post("/signup", validate(signupSchema), authController.signup);
 router.post("/login", validate(loginSchema), authController.login);
 router.post("/logout", protect, authController.logout);
 router.get("/me", protect, authController.getMe);
+router.post("/session", sessionController.adoptToken);
 
 router.post("/email/send-code", validate(sendEmailCodeSchema), authController.sendSignupCode);
 router.post("/email/verify-code", validate(verifyEmailCodeSchema), authController.verifySignupCode);

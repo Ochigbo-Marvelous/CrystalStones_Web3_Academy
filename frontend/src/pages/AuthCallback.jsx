@@ -23,33 +23,53 @@ export default function AuthCallback() {
   const error =
     bootError ||
     oauthError ||
-    (!token ? "Sign-in did not return a session. Try again." : "");
+    "";
 
   useEffect(() => {
-    if (oauthError || !token) return undefined;
-
-    localStorage.setItem("token", token);
+    if (oauthError) return undefined;
     const ac = new AbortController();
-    const hdr = { Authorization: `Bearer ${token}` };
 
-    fetch(`${API}/api/dashboard`, { headers: hdr, signal: ac.signal })
-      .then(async (res) => {
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(json.message || `Profile failed (${res.status})`);
-        const user = readUser(json);
-        if (!user?.id) throw new Error("Profile did not return a user");
-        localStorage.setItem("user", JSON.stringify(user));
-        return user;
-      })
-      .then((user) => {
-        if (ac.signal.aborted) return;
-        window.history.replaceState(null, "", "/auth/callback");
-        navigate(homeFor(user), { replace: true });
-      })
-      .catch((err) => {
-        if (err.name === "AbortError") return;
-        setBootError(err.message || "Failed to fetch profile");
+    const boot = async () => {
+      if (token) {
+        const adopt = await fetch(`${API}/api/auth/session`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+          signal: ac.signal,
+        });
+        const adopted = await adopt.json().catch(() => ({}));
+        if (adopt.ok && adopted?.data?.user) {
+          localStorage.setItem("user", JSON.stringify(adopted.data.user));
+          localStorage.setItem("token", token);
+          window.history.replaceState(null, "", "/auth/callback");
+          navigate(homeFor(adopted.data.user), { replace: true });
+          return;
+        }
+        localStorage.setItem("token", token);
+      }
+
+      const res = await fetch(`${API}/api/auth/me`, {
+        credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        signal: ac.signal,
       });
+      const json = await res.json().catch(() => ({}));
+      const user = readUser(json);
+      if (!res.ok || !user?.id) {
+        throw new Error(json.message || "Could not start session");
+      }
+      localStorage.setItem("user", JSON.stringify(user));
+      const nextToken = json?.data?.token || token;
+      if (nextToken) localStorage.setItem("token", nextToken);
+      window.history.replaceState(null, "", "/auth/callback");
+      navigate(homeFor(user), { replace: true });
+    };
+
+    boot().catch((err) => {
+      if (err.name === "AbortError") return;
+      setBootError(err.message || "Failed to fetch profile");
+    });
 
     return () => ac.abort();
   }, [oauthError, token, navigate]);

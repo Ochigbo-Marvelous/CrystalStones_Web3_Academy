@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const path = require("path");
 const jwt = require("jsonwebtoken");
 const pool = require("../config/db");
 const ApiError = require("../utils/ApiError");
@@ -8,6 +9,11 @@ const CODE_TTL_MS = 10 * 60 * 1000;
 const RESEND_MS = 60 * 1000;
 const MAX_ATTEMPTS = 5;
 const TICKET_TTL = "10m";
+const BRAND = "Crystal Web3 Academy";
+const LOGO_PATH = path.resolve(
+  __dirname,
+  "../../../frontend/src/assets/brand/crystal-hero-hex.png"
+);
 
 const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
 const hashCode = (email, purpose, code) =>
@@ -32,6 +38,17 @@ const readTicket = (ticket, purpose) => {
     throw new ApiError(401, "Email verification expired. Request a new code.");
   }
 };
+
+const codeHtml = (line, code) => `<div style="margin:0;padding:24px;background:#070b14;font-family:Arial,Helvetica,sans-serif;color:#d7e6ff;">
+  <div style="max-width:480px;margin:0 auto;text-align:left;">
+    <img src="cid:crystal-logo" alt="${BRAND}" width="72" height="72" style="display:block;margin:0 0 18px 0;border:0;" />
+    <p style="margin:0 0 14px;font-size:14px;line-height:1.55;color:#d7e6ff;">${line}</p>
+    <p style="margin:0 0 6px;font-size:13px;color:#9aa8bd;">Your code:</p>
+    <p style="margin:0 0 16px;font-size:28px;letter-spacing:4px;font-weight:700;color:#ffffff;">${code}</p>
+    <p style="margin:0 0 24px;font-size:13px;color:#9aa8bd;">This code expires in 10 minutes.</p>
+    <p style="margin:0;font-size:12px;color:#8b97ad;">${BRAND}</p>
+  </div>
+</div>`;
 
 const sendCode = async ({ email, purpose, subject, line }) => {
   const normalized = normalizeEmail(email);
@@ -59,7 +76,15 @@ const sendCode = async ({ email, purpose, subject, line }) => {
   await sendMail({
     to: normalized,
     subject,
-    text: `${line}\n\nYour code: ${code}\nThis code expires in 10 minutes.\n\nCrystal Stones Academy`,
+    text: `${line}\n\nYour code: ${code}\nThis code expires in 10 minutes.\n\n${BRAND}`,
+    html: codeHtml(line, code),
+    attachments: [
+      {
+        filename: "crystal-hero-hex.png",
+        path: LOGO_PATH,
+        cid: "crystal-logo",
+      },
+    ],
   });
 
   return { expiresInSeconds: 600 };

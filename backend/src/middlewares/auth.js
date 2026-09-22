@@ -3,10 +3,10 @@ const ApiError = require("../utils/ApiError");
 const asyncHandler = require("../utils/asyncHandler");
 const pool = require("../config/db");
 const { isBlocked } = require("../utils/tokenBlocklist");
+const { readSessionToken, readAdminToken } = require("../utils/sessionCookie");
 
 const protect = asyncHandler(async (req, res, next) => {
-  const header = req.headers.authorization;
-  const token = header?.startsWith("Bearer ") ? header.split(" ")[1] : null;
+  const token = readSessionToken(req);
 
   if (!token) {
     throw new ApiError(401, "Not authorized, no token provided");
@@ -42,12 +42,28 @@ const requireAdmin = asyncHandler(async (req, res, next) => {
     .toLowerCase();
 
   if (role !== "admin") {
-    throw new ApiError(
-      403,
-      `Admin only. Signed in as ${req.user?.email || "unknown"} with role "${req.user?.role || "none"}".`
-    );
+    throw new ApiError(404, `Route ${req.originalUrl} not found`);
   }
   next();
 });
 
-module.exports = { protect, requireAdmin };
+const requireAdmin2fa = asyncHandler(async (req, res, next) => {
+  const token = readAdminToken(req);
+  if (!token) {
+    throw new ApiError(403, "ADMIN_OTP_REQUIRED");
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.purpose !== "admin" || Number(decoded.id) !== Number(req.user.id)) {
+      throw new ApiError(403, "ADMIN_OTP_REQUIRED");
+    }
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(403, "ADMIN_OTP_REQUIRED");
+  }
+
+  next();
+});
+
+module.exports = { protect, requireAdmin, requireAdmin2fa };

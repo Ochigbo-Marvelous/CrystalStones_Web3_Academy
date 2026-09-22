@@ -1,9 +1,10 @@
-
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 const oauth = require("../services/oauth.service");
+const { setSessionCookie } = require("../utils/sessionCookie");
 
 const router = express.Router();
+const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/$/, "");
 
 const googleLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -29,9 +30,12 @@ router.get("/google", googleLimiter, (req, res, next) => {
 router.get("/google/callback", googleLimiter, async (req, res) => {
   try {
     const { token } = await oauth.googleCallback(req.query.code);
-    res.redirect(oauth.redirectWithToken(token));
+    setSessionCookie(res, token);
+    res.redirect(`${frontendUrl}/auth/callback#token=${encodeURIComponent(token)}`);
   } catch (err) {
-    res.redirect(oauth.redirectWithError(err.message || "Google sign-in failed"));
+    res.redirect(
+      `${frontendUrl}/auth/callback?error=${encodeURIComponent(err.message || "Google sign-in failed")}`
+    );
   }
 });
 

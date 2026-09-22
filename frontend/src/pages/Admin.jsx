@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/brand/crystal-hero-hex.png";
+import NotFound from "./NotFound";
 import "../styles/admin.css";
 
 const API = (import.meta.env.VITE_API_URL || "http://localhost:5001").replace(/\/$/, "");
@@ -11,6 +12,16 @@ const TABS = [
   { id: "tracks", label: "Tracks" },
   { id: "certificates", label: "Certificates" },
 ];
+
+const roleOf = () => {
+  try {
+    return String(JSON.parse(localStorage.getItem("user") || "{}").role || "")
+      .trim()
+      .toLowerCase();
+  } catch {
+    return "";
+  }
+};
 
 const headers = () => {
   const token = localStorage.getItem("token") || "";
@@ -117,19 +128,31 @@ export default function Admin() {
   const [q, setQ] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(true);
+  const [gate, setGate] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [otpInfo, setOtpInfo] = useState("");
+  const [otpBusy, setOtpBusy] = useState(false);
+  const [hidden, setHidden] = useState(false);
 
-  useEffect(() => {
-    const ac = new AbortController();
-    fetch(`${API}/api/admin/overview`, { headers: headers(), signal: ac.signal })
+  const loadOverview = () => {
+    setBusy(true);
+    fetch(`${API}/api/admin/overview`, { headers: headers(), credentials: "include" })
       .then(async (res) => {
         const json = await res.json().catch(() => ({}));
         if (res.status === 401) {
-          navigate("/signin", { replace: true });
+          setError("Session expired. Go to Sign in, then open /admin again.");
           return null;
         }
-        if (!res.ok) {
-          throw new Error(json.message || `Admin failed (${res.status})`);
+        if (res.status === 404) {
+          setHidden(true);
+          return null;
         }
+        if (res.status === 403 && json.message === "ADMIN_OTP_REQUIRED") {
+          setGate(true);
+          return null;
+        }
+        if (!res.ok) throw new Error(json.message || `Admin failed (${res.status})`);
+        setGate(false);
         return json.data;
       })
       .then((data) => {
@@ -140,9 +163,80 @@ export default function Admin() {
         setError(err.message || "Admin failed");
       })
       .finally(() => setBusy(false));
+  };
 
+  useEffect(() => {
+    const ac = new AbortController();
+    fetch(`${API}/api/admin/overview`, {
+      headers: headers(),
+      credentials: "include",
+      signal: ac.signal,
+    })
+      .then(async (res) => {
+        const json = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          setError("Session expired. Go to Sign in, then open /admin again.");
+          return null;
+        }
+        if (res.status === 404) {
+          setHidden(true);
+          return null;
+        }
+        if (res.status === 403 && json.message === "ADMIN_OTP_REQUIRED") {
+          setGate(true);
+          return null;
+        }
+        if (!res.ok) throw new Error(json.message || `Admin failed (${res.status})`);
+        setGate(false);
+        return json.data;
+      })
+      .then((data) => {
+        if (data) setOverview(data);
+      })
+      .catch((err) => {
+        if (err.name === "AbortError") return;
+        setError(err.message || "Admin failed");
+      })
+      .finally(() => setBusy(false));
     return () => ac.abort();
   }, [navigate]);
+
+  const sendCode = () => {
+    setOtpBusy(true);
+    setError("");
+    fetch(`${API}/api/admin/otp/send`, {
+      method: "POST",
+      headers: { ...headers(), "Content-Type": "application/json" },
+      credentials: "include",
+    })
+      .then(async (res) => {
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json.message || "Could not send code");
+        setOtpInfo(`Code sent to ${json.data?.email || "your admin email"}. Check inbox and spam.`);
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setOtpBusy(false));
+  };
+
+  const verifyCode = (e) => {
+    e.preventDefault();
+    setOtpBusy(true);
+    setError("");
+    fetch(`${API}/api/admin/otp/verify`, {
+      method: "POST",
+      headers: { ...headers(), "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ code: otp }),
+    })
+      .then(async (res) => {
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json.message || "Wrong code");
+        setGate(false);
+        loadOverview();
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setOtpBusy(false));
+  };
 
   const loadUsers = (query) => {
     fetch(`${API}/api/admin/users?q=${encodeURIComponent(query || "")}`, { headers: headers() })
@@ -186,6 +280,20 @@ export default function Admin() {
     loadUsers(q);
   };
 
+  const goDashboard = (e) => {
+    e.preventDefault();
+    fetch(`${API}/api/auth/me`, { headers: headers(), credentials: "include" })
+      .then(async (res) => {
+        const json = await res.json().catch(() => ({}));
+        if (json?.data?.token) localStorage.setItem("token", json.data.token);
+        if (json?.data?.user) localStorage.setItem("user", JSON.stringify(json.data.user));
+      })
+      .catch(() => {})
+      .finally(() => {
+        navigate("/dashboard");
+      });
+  };
+
   const kpis = overview?.kpis;
   const charts = overview?.charts;
 
@@ -196,10 +304,14 @@ export default function Admin() {
     return `${f(from)} – ${f(to)}`;
   }, []);
 
+  if (hidden || roleOf() !== "admin") {
+    return <NotFound />;
+  }
+
   return (
     <div className="ad">
       <aside className="ad-side">
-        <Link className="ad-brand" to="/dashboard">
+        <Link className="ad-brand" to="/dashboard" onClick={goDashboard}>
           <img src={logo} alt="" />
           <span>
             <strong>Crystal Web3</strong>
@@ -218,7 +330,9 @@ export default function Admin() {
             </button>
           ))}
         </nav>
-        <Link className="ad-back" to="/dashboard">← Dashboard</Link>
+        <Link className="ad-back" to="/dashboard" onClick={goDashboard}>
+          ← Dashboard
+        </Link>
       </aside>
 
       <main className="ad-main">
@@ -231,7 +345,28 @@ export default function Admin() {
         </header>
 
         {error ? <p className="ad-error">{error}</p> : null}
-        {busy && !overview ? <p className="ad-muted">Loading live numbers…</p> : null}
+        {busy && !overview && !gate ? <p className="ad-muted">Loading live numbers…</p> : null}
+
+        {gate ? (
+          <section className="ad-card" style={{ maxWidth: 420, marginBottom: 18 }}>
+            <h2>Admin verification</h2>
+            <p className="ad-muted">A 6-digit code is emailed to the admin address. Valid 10 minutes.</p>
+            {otpInfo ? <p className="ad-muted">{otpInfo}</p> : null}
+            <button type="button" className="ad-search" style={{ margin: "12px 0" }} onClick={sendCode} disabled={otpBusy}>
+              {otpBusy ? "Sending…" : "Send code"}
+            </button>
+            <form className="ad-search" onSubmit={verifyCode}>
+              <input
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                placeholder="6-digit code"
+              />
+              <button type="submit" disabled={otpBusy || otp.length !== 6}>Unlock</button>
+            </form>
+          </section>
+        ) : null}
 
         {tab === "overview" && overview ? (
           <>

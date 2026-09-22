@@ -1,6 +1,8 @@
 const asyncHandler = require("../utils/asyncHandler");
 const authService = require("../services/auth.service");
 const oauthService = require("../services/oauth.service");
+const { setSessionCookie, clearSessionCookie } = require("../utils/sessionCookie");
+const generateToken = require("../utils/generateToken");
 
 const signup = asyncHandler(async (req, res) => {
   const { full_name, username, email, password, email_ticket } = req.body;
@@ -11,22 +13,27 @@ const signup = asyncHandler(async (req, res) => {
     password,
     email_ticket,
   });
+  setSessionCookie(res, result.token);
   res.status(201).json({ success: true, message: "Account created successfully", data: result });
 });
 
 const login = asyncHandler(async (req, res) => {
   const { login, password } = req.body;
   const result = await authService.login({ login, password });
+  setSessionCookie(res, result.token);
   res.status(200).json({ success: true, message: "Login successful", data: result });
 });
 
 const logout = asyncHandler(async (req, res) => {
   await authService.logout(req.token);
+  clearSessionCookie(res);
   res.status(200).json({ success: true, message: "Logged out" });
 });
 
 const getMe = asyncHandler(async (req, res) => {
-  res.status(200).json({ success: true, data: { user: req.user } });
+  const token = generateToken(req.user.id);
+  setSessionCookie(res, token);
+  res.status(200).json({ success: true, data: { user: req.user, token } });
 });
 
 const sendSignupCode = asyncHandler(async (req, res) => {
@@ -76,6 +83,7 @@ const githubCallback = asyncHandler(async (req, res) => {
   try {
     const result = await oauthService.githubCallback(code);
     res.clearCookie("oauth_state");
+    setSessionCookie(res, result.token);
     return res.redirect(oauthService.redirectWithToken(result.token));
   } catch (error) {
     const reason = encodeURIComponent(error.message || "github_failed");

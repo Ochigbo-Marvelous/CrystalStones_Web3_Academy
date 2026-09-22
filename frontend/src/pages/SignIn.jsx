@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import crystal from "../assets/brand/crystal-hero-hex.png";
 import logo from "../assets/brand/crystal-hero-hex.png";
 import "../styles/signup.css";
@@ -52,6 +52,7 @@ const stars = [
 ];
 
 export default function SignIn() {
+  const navigate = useNavigate();
   const [form, setForm] = useState({ login: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -75,14 +76,20 @@ export default function SignIn() {
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(data.message || "Invalid credentials");
       }
 
-      localStorage.setItem("token", data.data.token);
-      localStorage.setItem("user", JSON.stringify(data.data.user));
-      window.location.href = homeFor(data.data.user);
+      const token = data?.data?.token;
+      const user = data?.data?.user;
+      if (!token || !user) {
+        throw new Error("Login did not return a session. Try again.");
+      }
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+      navigate(homeFor(user), { replace: true });
     } catch (err) {
       setError(err.message || "Login failed");
     } finally {
@@ -110,6 +117,7 @@ export default function SignIn() {
             <input
               className="su-input"
               placeholder="Enter username or email"
+              autoComplete="username"
               value={form.login}
               onChange={set("login")}
             />
@@ -119,6 +127,7 @@ export default function SignIn() {
               className="su-input"
               type="password"
               placeholder="Enter your password"
+              autoComplete="current-password"
               value={form.password}
               onChange={set("password")}
             />

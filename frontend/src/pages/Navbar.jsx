@@ -1,11 +1,15 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import logo from "../assets/brand/crystal-hero-hex.png";
 import { rankImage } from "../lib/rankAssets";
 import { avatarSrc } from "../lib/avatarUrl";
 import { clearAllMentorThreads } from "../lib/mentorStorage";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5001";
+const SUPPORT_GMAIL =
+  "https://mail.google.com/mail/?view=cm&fs=1&to=info@crystalweb3academy.org&su=Crystal%20Web3%20Academy%20support";
+const SUPPORT_MAIL =
+  "mailto:info@crystalweb3academy.org?subject=Crystal%20Web3%20Academy%20support";
 
 function IconHome() {
   return (
@@ -58,12 +62,33 @@ function IconShield() {
   );
 }
 
+function IconMail() {
+  return (
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="3.5" y="5.5" width="17" height="13" rx="2" />
+      <path d="m4 7 8 6 8-6" />
+    </svg>
+  );
+}
+
 const readStoredUser = () => {
   try {
     return JSON.parse(localStorage.getItem("user") || "null");
   } catch {
     return null;
   }
+};
+
+const isPhone = () => {
+  const ua = navigator.userAgent || "";
+  if (/Android|iPhone|iPad|iPod/i.test(ua)) return true;
+  return window.matchMedia("(pointer: coarse)").matches && window.matchMedia("(max-width: 900px)").matches;
+};
+
+const openSupport = (event) => {
+  if (!isPhone()) return;
+  event.preventDefault();
+  window.location.href = SUPPORT_MAIL;
 };
 
 const logout = async () => {
@@ -101,13 +126,13 @@ export default function Navbar({ user }) {
 
   return (
     <header className={`db-nav${open ? " is-open" : ""}`}>
-      <div className="db-brand">
+      <Link className="db-brand" to="/" style={{ color: "inherit", textDecoration: "none" }}>
         <img src={logo} alt="" />
         <div>
           <strong>Crystal Web3 Academy</strong>
           <span>Forge Knowledge. Achieve Mastery.</span>
         </div>
-      </div>
+      </Link>
 
       <button
         type="button"
@@ -136,6 +161,9 @@ export default function Navbar({ user }) {
         <NavLink to="/profile">
           <IconUser /> Profile
         </NavLink>
+        <a href={SUPPORT_GMAIL} target="_blank" rel="noopener noreferrer" onClick={openSupport}>
+          <IconMail /> Support
+        </a>
         {isAdmin ? (
           <NavLink to="/admin">
             <IconShield /> Admin

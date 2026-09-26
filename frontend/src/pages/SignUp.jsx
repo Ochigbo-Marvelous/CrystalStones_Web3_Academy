@@ -16,10 +16,9 @@ const oauthUrl = (path) => {
   try {
     const env = API || fallback;
     const u = new URL(env, window.location.origin);
-    const origin = u.origin === window.location.origin || u.port === "5173" ? fallback : u.origin;
-    return `${origin}${path}`;
+    return `${u.origin}${path}`;
   } catch {
-    return `${fallback}${path}`;
+    return `${window.location.origin}${path}`;
   }
 };
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
@@ -43,6 +42,25 @@ function GitHubIcon() {
         fill="#fff"
         d="M12 2.1c-5.5 0-10 4.5-10 10 0 4.4 2.9 8.2 6.8 9.5.5.1.7-.2.7-.5v-1.8c-2.8.6-3.4-1.2-3.4-1.2-.4-1.1-1.1-1.4-1.1-1.4-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.6.3-1.1.6-1.3-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.8 1 .8-.2 1.6-.3 2.5-.3s1.7.1 2.5.3c1.9-1.3 2.7-1 2.7-1 .5 1.4.2 2.4.1 2.7.6.7 1 1.6 1 2.7 0 3.9-2.4 4.7-4.6 5 .4.3.7.9.7 1.9v2.8c0 .3.2.6.7.5 4-1.3 6.8-5.1 6.8-9.5 0-5.5-4.5-10-10-10z"
       />
+    </svg>
+  );
+}
+
+function EyeIcon({ open }) {
+  if (open) {
+    return (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+        <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z" />
+        <circle cx="12" cy="12" r="2.5" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path d="M3 3l18 18" />
+      <path d="M10.6 6.2A10.7 10.7 0 0 1 12 6c6.5 0 10 6 10 6a18.4 18.4 0 0 1-4.1 4.6" />
+      <path d="M6.1 6.1C3.7 7.8 2 12 2 12s3.5 6 10 6c1.5 0 2.9-.3 4.1-.8" />
+      <path d="M9.9 9.9a2.5 2.5 0 0 0 3.5 3.5" />
     </svg>
   );
 }
@@ -74,6 +92,8 @@ export default function SignUp() {
     password: "",
     confirm: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [emailTicket, setEmailTicket] = useState("");
   const [cooldown, setCooldown] = useState(0);
   const [avatar, setAvatar] = useState(avatarDefault);
@@ -364,10 +384,44 @@ export default function SignUp() {
             <p className="su-note">This will be your unique Crystal ID.</p>
 
             <label className="su-label">PASSWORD</label>
-            <input className="su-input" type="password" placeholder="Create a password" value={form.password} onChange={set("password")} />
+            <div className="su-pass">
+              <input
+                className="su-input"
+                type={showPassword ? "text" : "password"}
+                placeholder="Create a password"
+                autoComplete="new-password"
+                value={form.password}
+                onChange={set("password")}
+              />
+              <button
+                className="su-eye"
+                type="button"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                onClick={() => setShowPassword((open) => !open)}
+              >
+                <EyeIcon open={showPassword} />
+              </button>
+            </div>
 
             <label className="su-label">CONFIRM PASSWORD</label>
-            <input className="su-input" type="password" placeholder="Confirm your password" value={form.confirm} onChange={set("confirm")} />
+            <div className="su-pass">
+              <input
+                className="su-input"
+                type={showConfirm ? "text" : "password"}
+                placeholder="Confirm your password"
+                autoComplete="new-password"
+                value={form.confirm}
+                onChange={set("confirm")}
+              />
+              <button
+                className="su-eye"
+                type="button"
+                aria-label={showConfirm ? "Hide password" : "Show password"}
+                onClick={() => setShowConfirm((open) => !open)}
+              >
+                <EyeIcon open={showConfirm} />
+              </button>
+            </div>
 
             <div className="su-rules">
               {rules.map((rule) => (
@@ -391,7 +445,7 @@ export default function SignUp() {
           <div className="su-social">
             <a
               className="su-oauth"
-              href="http://localhost:5001/api/auth/google"
+              href={`${API}/api/auth/google`}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -402,7 +456,7 @@ export default function SignUp() {
             </a>
             <a
               className="su-oauth"
-              href="http://localhost:5001/api/auth/github"
+              href={`${API}/api/auth/github`}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();

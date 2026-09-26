@@ -27,6 +27,10 @@ import "../styles/landing.css";
 import "../styles/landing-mentor.css";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5001";
+const SUPPORT_GMAIL =
+  "https://mail.google.com/mail/?view=cm&fs=1&to=info@crystalweb3academy.org&su=Crystal%20Web3%20Academy%20support";
+const SUPPORT_MAIL =
+  "mailto:info@crystalweb3academy.org?subject=Crystal%20Web3%20Academy%20support";
 
 const SPOKES = [
   { id: "network", label: "Network", x: 50, y: 8, copy: "Public chains run because people participate. This academy does not pay you to stake." },
@@ -212,6 +216,36 @@ const barWidth = (index, active) => {
   return "10%";
 };
 
+const isPhone = () => {
+  const ua = navigator.userAgent || "";
+  if (/Android|iPhone|iPad|iPod/i.test(ua)) return true;
+  return window.matchMedia("(pointer: coarse)").matches && window.matchMedia("(max-width: 900px)").matches;
+};
+
+const openSupport = (event) => {
+  if (!isPhone()) return;
+  event.preventDefault();
+  window.location.href = SUPPORT_MAIL;
+};
+
+const sessionIsLive = () => {
+  const token = localStorage.getItem("token");
+  if (!token) return false;
+  try {
+    const part = token.split(".")[1];
+    if (!part) throw new Error("bad token");
+    const base = part.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base + "=".repeat((4 - (base.length % 4)) % 4);
+    const payload = JSON.parse(atob(padded));
+    if (payload.exp && payload.exp * 1000 <= Date.now()) throw new Error("expired");
+    return true;
+  } catch {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    return false;
+  }
+};
+
 export default function Landing() {
   const navigate = useNavigate();
   const [spoke, setSpoke] = useState("education");
@@ -222,9 +256,6 @@ export default function Landing() {
   const [whyStep, setWhyStep] = useState(0);
   const [whyPin, setWhyPin] = useState("pre");
   const [gate, setGate] = useState(false);
-  const [newsEmail, setNewsEmail] = useState("");
-  const [newsNote, setNewsNote] = useState("");
-  const [newsBusy, setNewsBusy] = useState(false);
   const [mentorOpen, setMentorOpen] = useState(false);
   const [mentorInput, setMentorInput] = useState("");
   const [mentorBusy, setMentorBusy] = useState(false);
@@ -236,9 +267,11 @@ export default function Landing() {
   const mentorBox = useRef(null);
   const active = SPOKES.find((s) => s.id === spoke) || SPOKES[6];
 
-  useEffect(() => {
-    if (localStorage.getItem("token")) navigate("/dashboard", { replace: true });
-  }, [navigate]);
+  const goSignIn = (event) => {
+    if (!sessionIsLive()) return;
+    event.preventDefault();
+    navigate("/dashboard");
+  };
 
   useEffect(() => pinScroll(growthRef.current, GROWTH.length, setGrowthPin, setGrowthStep), []);
   useEffect(() => pinScroll(ranksRef.current, RANKS.length, setRankPin, setRankStep), []);
@@ -263,35 +296,6 @@ export default function Landing() {
       mentorBox.current.scrollTop = mentorBox.current.scrollHeight;
     }
   }, [mentorChat, mentorBusy]);
-
-  const subscribeNews = async (e) => {
-    e.preventDefault();
-    const email = newsEmail.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setNewsNote("Enter a valid email.");
-      return;
-    }
-    setNewsBusy(true);
-    setNewsNote("");
-    try {
-      const res = await fetch(`${API}/api/newsletter`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.success) {
-        setNewsNote(data.message || "Could not subscribe.");
-        return;
-      }
-      setNewsNote(data.message || "You're on the list.");
-      setNewsEmail("");
-    } catch {
-      setNewsNote("Could not reach the academy. Try again.");
-    } finally {
-      setNewsBusy(false);
-    }
-  };
 
   const askLandingMentor = async (e) => {
     e.preventDefault();
@@ -348,7 +352,7 @@ export default function Landing() {
               <a href="#why">Why</a>
               <a href="#courses">Courses</a>
             </nav>
-            <Link className="lp-signin" to="/signin">Sign in</Link>
+            <Link className="lp-signin" to="/signin" onClick={goSignIn}>Sign in</Link>
             <Link className="lp-btn" to="/signup">Get started</Link>
           </div>
         </header>
@@ -424,7 +428,6 @@ export default function Landing() {
       >
         <div className={`lp-growth-sticky is-${growthPin}`}>
           <div className="lp-growth-art">
-            <p className="lp-growth-kicker">Crystal growth — every step, everyday evolution</p>
             <h2>
               Crystal growth
               <em>every step, everyday evolution</em>
@@ -572,7 +575,7 @@ export default function Landing() {
             <div className="lp-courses-panel">
               <small>Sign in to explore</small>
               <p>Unlock the full academy experience and track your progress.</p>
-              <button type="button" onClick={() => setGate(true)}>
+              <button type="button" onClick={() => (sessionIsLive() ? navigate("/dashboard") : setGate(true))}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.8" />
                   <path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="1.8" />
@@ -625,24 +628,13 @@ export default function Landing() {
               <a href="https://t.me/CrystalStones" target="_blank" rel="noopener noreferrer">Telegram</a>
               <a href="https://x.com/crystalstones01" target="_blank" rel="noopener noreferrer">X (Twitter)</a>
             </div>
-            <form className="lp-news" onSubmit={subscribeNews}>
-              <small className="is-red">Newsletter</small>
-              <p>Insights. Drops. Lessons. Stay crystal clear.</p>
-              <div className="lp-news-row">
-                <input
-                  type="email"
-                  value={newsEmail}
-                  onChange={(e) => setNewsEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  maxLength={120}
-                  disabled={newsBusy}
-                />
-                <button type="submit" aria-label="Subscribe" disabled={newsBusy}>
-                  <img src={logo} alt="" />
-                </button>
-              </div>
-              {newsNote ? <em>{newsNote}</em> : null}
-            </form>
+            <div className="lp-news">
+              <small className="is-red">Contact</small>
+              <p>Payment issues or questions. Write to the academy.</p>
+              <a href={SUPPORT_GMAIL} target="_blank" rel="noopener noreferrer" onClick={openSupport}>
+                info@crystalweb3academy.org
+              </a>
+            </div>
           </div>
 
           <div className="lp-foot-end">
@@ -669,7 +661,7 @@ export default function Landing() {
               Basic is free. Intermediate is $10 USDT BEP-20 if you skip ahead.
               Advanced comes later.
             </p>
-            <Link className="lp-btn" to="/signin">Sign in</Link>
+            <Link className="lp-btn" to="/signin" onClick={goSignIn}>Sign in</Link>
             <Link className="lp-btn ghost" to="/signup">Create account</Link>
             <button type="button" className="lp-gate-close" onClick={() => setGate(false)}>
               Close

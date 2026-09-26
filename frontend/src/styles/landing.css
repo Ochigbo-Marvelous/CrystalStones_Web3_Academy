@@ -1727,3 +1727,35 @@ html {
     transform: none !important;
   }
 }
+
+.lp-foot-grid > div,
+.lp-news {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.lp-news {
+  width: auto;
+  justify-self: stretch;
+}
+
+.lp-news a {
+  display: block;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+@media (max-width: 1100px) {
+  .lp-news,
+  .lp-news a {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+  }
+}

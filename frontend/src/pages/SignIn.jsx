@@ -14,10 +14,9 @@ const oauthUrl = (path) => {
   try {
     const env = API || fallback;
     const u = new URL(env, window.location.origin);
-    const origin = u.origin === window.location.origin || u.port === "5173" ? fallback : u.origin;
-    return `${origin}${path}`;
+    return `${u.origin}${path}`;
   } catch {
-    return `${fallback}${path}`;
+    return `${window.location.origin}${path}`;
   }
 };
 
@@ -43,6 +42,25 @@ function GitHubIcon() {
   );
 }
 
+function EyeIcon({ open }) {
+  if (open) {
+    return (
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+        <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z" />
+        <circle cx="12" cy="12" r="2.5" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path d="M3 3l18 18" />
+      <path d="M10.6 6.2A10.7 10.7 0 0 1 12 6c6.5 0 10 6 10 6a18.4 18.4 0 0 1-4.1 4.6" />
+      <path d="M6.1 6.1C3.7 7.8 2 12 2 12s3.5 6 10 6c1.5 0 2.9-.3 4.1-.8" />
+      <path d="M9.9 9.9a2.5 2.5 0 0 0 3.5 3.5" />
+    </svg>
+  );
+}
+
 const stars = [
   { left: "12%", delay: "0s", duration: "7s", color: "#4da3ff", size: 3 },
   { left: "28%", delay: "1.4s", duration: "9s", color: "#ff3b3b", size: 2 },
@@ -54,6 +72,7 @@ const stars = [
 export default function SignIn() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ login: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -123,14 +142,24 @@ export default function SignIn() {
             />
 
             <label className="su-label">PASSWORD</label>
-            <input
-              className="su-input"
-              type="password"
-              placeholder="Enter your password"
-              autoComplete="current-password"
-              value={form.password}
-              onChange={set("password")}
-            />
+            <div className="su-pass">
+              <input
+                className="su-input"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                autoComplete="current-password"
+                value={form.password}
+                onChange={set("password")}
+              />
+              <button
+                className="su-eye"
+                type="button"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                onClick={() => setShowPassword((open) => !open)}
+              >
+                <EyeIcon open={showPassword} />
+              </button>
+            </div>
 
             <p className="su-note">
               <Link to="/forgot-password">Forgot password?</Link>
@@ -148,7 +177,7 @@ export default function SignIn() {
           <div className="su-social">
             <a
               className="su-oauth"
-              href="http://localhost:5001/api/auth/google"
+              href={`${API}/api/auth/google`}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -159,7 +188,7 @@ export default function SignIn() {
             </a>
             <a
               className="su-oauth"
-              href="http://localhost:5001/api/auth/github"
+              href={`${API}/api/auth/github`}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();

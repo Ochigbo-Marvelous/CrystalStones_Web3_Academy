@@ -500,3 +500,30 @@ html {
 .su-card h3 {
   color: #f4f7ff !important;
 }
+
+.su-pass {
+  position: relative;
+}
+
+.su-pass .su-input {
+  padding-right: 46px;
+}
+
+.su-eye {
+  position: absolute;
+  top: 0;
+  right: 6px;
+  width: 36px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #8b97ad;
+  cursor: pointer;
+}
+
+.su-eye:hover {
+  color: #f4f7ff;
+}

@@ -5,12 +5,13 @@ import academyLogo from "../assets/brand/crystal-hero-hex.png";
 import crystalBasic from "../assets/brand/crystal-basic-blue.png";
 import crystalIntermediate from "../assets/brand/crystal-intermediate-gold.png";
 import crystalAdvanced from "../assets/brand/crystal-advanced-green.png";
-import mentorCrystal from "../assets/brand/crystal-hero.png";
+import mentorBot from "../assets/brand/mentor-bot.PNG";
 import brain from "../assets/brand/mentor-brain.png";
 import iconBook from "../assets/brand/icon-book.png";
 import iconClock from "../assets/brand/icon-clock.png";
 import iconCert from "../assets/brand/icon-cert.png";
 import { rankImage } from "../lib/rankAssets";
+import MentorBody from "../components/MentorReply";
 import {
   isBadMentorLine,
   readMentorThread,
@@ -192,6 +193,7 @@ export default function Dashboard() {
   const [thread, setThread] = useState([]);
   const [completedPage, setCompletedPage] = useState(1);
   const [board, setBoard] = useState(null);
+  const [boardPage, setBoardPage] = useState(1);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -306,6 +308,11 @@ export default function Dashboard() {
   const openCourse = (course) => {
     navigate(`/courses/${course.slug || course.course_id}`);
   };
+
+  const boardRows = board?.rows || [];
+  const totalBoardPages = Math.max(1, Math.ceil(boardRows.length / 5));
+  const safeBoardPage = Math.min(boardPage, totalBoardPages);
+  const pagedBoard = boardRows.slice((safeBoardPage - 1) * 5, safeBoardPage * 5);
 
   return (
     <div className="db">
@@ -484,7 +491,7 @@ export default function Dashboard() {
               </button>
             </div>
             <div className="db-mentor-box">
-              <img src={mentorCrystal} alt="" />
+              <img src={mentorBot} alt="" />
               <p>Hello {crystalId}! Ask about Crystal Stones, a lesson, or your next path.</p>
             </div>
             <div className="db-chat">
@@ -506,7 +513,7 @@ export default function Dashboard() {
               ) : (
                 thread.slice(-8).map((item) => (
                   <div key={`${item.role}-${item.at}-${item.text}`} className={`db-bubble ${item.role}`}>
-                    {item.text}
+                    {item.role === "mentor" ? <MentorBody text={item.text} /> : item.text}
                   </div>
                 ))
               )}
@@ -553,14 +560,39 @@ export default function Dashboard() {
                 {board?.you?.place ? `You #${board.you.place}` : `${board?.total || 0} learners`}
               </small>
             </div>
-            {!board?.rows?.length ? (
+            {!boardRows.length ? (
               <p className="db-empty">Rankings appear as learners earn XP.</p>
             ) : (
-              <ul className="db-board-list">
-                {board.rows.map((row) => (
-                  <BoardRow key={`${row.user_id}-${row.place}`} row={row} />
-                ))}
-              </ul>
+              <>
+                <ul className="db-board-list">
+                  {pagedBoard.map((row) => (
+                    <BoardRow key={`${row.user_id}-${row.place}`} row={row} />
+                  ))}
+                </ul>
+                {boardRows.length > 5 ? (
+                  <div className="db-pager">
+                    <button
+                      type="button"
+                      className="db-btn ghost slim"
+                      disabled={safeBoardPage <= 1}
+                      onClick={() => setBoardPage((p) => Math.max(1, p - 1))}
+                    >
+                      Prev
+                    </button>
+                    <span>
+                      Page {safeBoardPage} of {totalBoardPages}
+                    </span>
+                    <button
+                      type="button"
+                      className="db-btn ghost slim"
+                      disabled={safeBoardPage >= totalBoardPages}
+                      onClick={() => setBoardPage((p) => Math.min(totalBoardPages, p + 1))}
+                    >
+                      Next
+                    </button>
+                  </div>
+                ) : null}
+              </>
             )}
           </div>
         </div>

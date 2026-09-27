@@ -1329,3 +1329,108 @@
   .db-chat { min-height: 240px; max-height: 280px; }
   .db-brain { width: 150px; height: 150px; }
 }
+
+.db-bubble.mentor {
+  white-space: normal;
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+.db-bubble.mentor p {
+  margin: 0 0 8px;
+  text-align: justify;
+}
+
+.db-bubble.mentor p:last-child {
+  margin-bottom: 0;
+}
+
+.db-bubble.mentor strong {
+  color: #fff;
+  font-weight: 700;
+}
+
+.db-bubble.mentor em {
+  font-style: italic;
+  color: #c5d0e0;
+}
+
+.db-bubble.mentor ul {
+  margin: 0 0 8px;
+  padding-left: 18px;
+  text-align: left;
+}
+
+.db-bubble.mentor li {
+  margin: 0 0 4px;
+  text-align: left;
+}
+
+.db-bubble.mentor .mn-cite {
+  display: block;
+  margin-top: 8px;
+  color: #8b97ad;
+  font-size: 12px;
+  font-style: italic;
+  text-align: left;
+}
+
+.db-board-list {
+  max-height: none;
+  overflow: visible;
+}
+
+.db-board-row {
+  height: auto;
+  min-height: 64px;
+  max-height: none;
+  text-align: left;
+}
+
+.db-board-copy {
+  text-align: left;
+  min-width: 0;
+}
+
+.db-board-copy b,
+.db-board-copy small {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  text-align: left;
+}
+
+.db-board-copy b {
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+@media (min-width: 701px) {
+  .db-main {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+    height: auto;
+  }
+
+  .db-left,
+  .db-side {
+    display: flex !important;
+    flex-direction: column;
+    width: auto;
+    max-width: none;
+    min-width: 0;
+    height: auto;
+  }
+
+  .db-progress-row {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+  }
+
+  .db-progress-meta,
+  .db-progress-row .db-btn {
+    grid-column: auto;
+    width: auto;
+  }
+}

@@ -1,12 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "./Navbar";
 import crystalBasic from "../assets/brand/crystal-basic-blue.png";
 import crystalIntermediate from "../assets/brand/crystal-intermediate-gold.png";
 import crystalAdvanced from "../assets/brand/crystal-advanced-green.png";
+import mentorBot from "../assets/brand/mentor-bot.PNG";
+import brain from "../assets/brand/mentor-brain.png";
+import MentorBody from "../components/MentorReply";
 import "../styles/dashboard.css";
 import "../styles/courses.css";
 import "../styles/course-player.css";
+import "../styles/landing-mentor.css";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
@@ -109,6 +114,164 @@ async function courseIsFinished(course, enrollment, headers) {
   } catch {
     return false;
   }
+}
+
+function BtcIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="11" fill="#f7931a" />
+      <path fill="#fff" d="M15.2 11.3c.7-.4 1.1-1 1-1.8-.2-1.2-1.3-1.6-2.7-1.7V6.3h-1.4v1.4H11V6.3H9.6v1.5H7.8v1.5h1.1c.4 0 .6.2.6.6v5.3c0 .3-.2.5-.5.5H7.8V17h1.8v1.5H11V17h1.1v1.5h1.4V17c1.6-.1 2.8-.7 3-2 .1-1-.3-1.6-1.3-2zM11 9.4h1.6c.7 0 1.2.2 1.3.8.1.5-.3.9-1.1.9H11V9.4zm2 5.8H11v-1.9h2.1c.8 0 1.3.3 1.4.9.1.6-.4 1-1.5 1z" />
+    </svg>
+  );
+}
+
+function EthIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#627eea" d="M12 2.2 5.6 12.3 12 16l6.4-3.7L12 2.2z" />
+      <path fill="#8ea0f0" d="M12 16 5.6 12.3 12 21.8l6.4-9.5L12 16z" />
+    </svg>
+  );
+}
+
+function CrystalCoin() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <polygon points="12,2 21,7.5 21,16.5 12,22 3,16.5 3,7.5" fill="#0b1422" stroke="#3b7aee" strokeWidth="1.6" />
+      <polygon points="12,6 16.5,8.6 16.5,13.4 12,16 7.5,13.4 7.5,8.6" fill="none" stroke="#e03a28" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
+function PiIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 7h14M9 7v11M15 7c3 0 3 5 0 8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function SumIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M18 5H7l7 7-7 7h11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function RootIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 13h3l2.5 6L14 5h6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function StudyMentor({ hint }) {
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [chat, setChat] = useState([]);
+  const box = useRef(null);
+
+  useEffect(() => {
+    if (box.current) box.current.scrollTop = box.current.scrollHeight;
+  }, [chat, busy, open]);
+
+  const ask = async (event) => {
+    event.preventDefault();
+    const question = input.trim();
+    if (question.length < 3 || busy) return;
+    const token = localStorage.getItem("token");
+    setInput("");
+    setChat((rows) => [...rows, { role: "user", text: question }]);
+    setBusy(true);
+    try {
+      const res = await fetch(`${API}/api/mentor/ask`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ question }),
+      });
+      const data = await res.json().catch(() => ({}));
+      const answer = data?.data?.answer || data.message || "Crystal Mentor could not finish that answer just now.";
+      if (!res.ok || /route\s+\/api\/mentor|not found|stack|sql|token failed/i.test(String(answer))) {
+        throw new Error("unavailable");
+      }
+      setChat((rows) => [...rows, { role: "mentor", text: answer }]);
+    } catch {
+      setChat((rows) => [
+        ...rows,
+        { role: "mentor", text: "Could not reach Crystal Mentor. Try again in a moment." },
+      ]);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      {open ? (
+        <div className="lp-fab-panel" role="dialog" aria-label="Crystal Mentor">
+          <div className="lp-fab-head">
+            <img src={mentorBot} alt="" />
+            <span>
+              <strong>Crystal Mentor</strong>
+              <small>Ask here, then close this and continue. Education only.</small>
+            </span>
+          </div>
+          <div className="lp-fab-chat" ref={box}>
+            {chat.length === 0 ? (
+              <div className="lp-fab-empty">
+                <div className="lp-fab-brain" aria-hidden="true">
+                  <div className="lp-fab-brain-spin">
+                    <img src={brain} alt="" />
+                  </div>
+                  <span className="lp-fab-particle p1"><BtcIcon /></span>
+                  <span className="lp-fab-particle p2"><EthIcon /></span>
+                  <span className="lp-fab-particle p3"><CrystalCoin /></span>
+                  <span className="lp-fab-particle p4"><PiIcon /></span>
+                  <span className="lp-fab-particle p5"><SumIcon /></span>
+                  <span className="lp-fab-particle p6"><RootIcon /></span>
+                </div>
+                <p>{hint}</p>
+              </div>
+            ) : (
+              chat.map((item, index) => (
+                <div key={`${item.role}-${index}`} className={`lp-fab-bubble ${item.role}`}>
+                  {item.role === "mentor" ? <MentorBody text={item.text} /> : item.text}
+                </div>
+              ))
+            )}
+            {busy ? <div className="lp-fab-bubble mentor">Thinking…</div> : null}
+          </div>
+          <form className="lp-fab-form" onSubmit={ask}>
+            <input
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              placeholder="Ask Crystal Mentor..."
+              maxLength={500}
+              disabled={busy}
+            />
+            <button type="submit" disabled={busy}>
+              {busy ? "…" : "➤"}
+            </button>
+          </form>
+        </div>
+      ) : null}
+      <button
+        type="button"
+        className={`lp-fab${open ? " is-open" : ""}`}
+        style={{ display: "grid", placeItems: "center", padding: 0 }}
+        aria-label={open ? "Close Crystal Mentor" : "Open Crystal Mentor"}
+        onClick={() => setOpen((value) => !value)}
+      >
+        {open ? <span>✕</span> : <img src={mentorBot} alt="" />}
+      </button>
+    </>
+  );
 }
 
 function IconLock() {
@@ -416,6 +579,7 @@ export default function CoursePlayer() {
         </div>
         <p className="cp-note">Finish the quiz in a module to unlock the next one.</p>
       </section>
+      <StudyMentor hint="Ask about this course without leaving the page. Not a buy signal." />
     </div>
   );
 }

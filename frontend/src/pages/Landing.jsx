@@ -23,8 +23,10 @@ import crystalBasic from "../assets/brand/crystal-basic-blue.png";
 import crystalIntermediate from "../assets/brand/crystal-intermediate-gold.png";
 import crystalAdvanced from "../assets/brand/crystal-advanced-green.png";
 import brain from "../assets/brand/mentor-brain.png";
+import MentorBody from "../components/MentorReply";
 import "../styles/landing.css";
 import "../styles/landing-mentor.css";
+import mentorBot from "../assets/brand/mentor-bot.PNG";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5001";
 const SUPPORT_GMAIL =
@@ -673,7 +675,7 @@ export default function Landing() {
       {mentorOpen ? (
         <div className="lp-fab-panel" role="dialog" aria-label="Crystal Mentor">
           <div className="lp-fab-head">
-            <img src={logo} alt="" />
+            <img src={mentorBot} alt="" />
             <span>
               <strong>Crystal Mentor</strong>
               <small>Ask about the academy, tracks, or Crystal Stones. Education only.</small>
@@ -701,7 +703,7 @@ export default function Landing() {
             ) : (
               mentorChat.map((item, i) => (
                 <div key={`${item.role}-${i}`} className={`lp-fab-bubble ${item.role}`}>
-                  {item.text}
+                  {item.role === "mentor" ? <MentorBody text={item.text} /> : item.text}
                 </div>
               ))
             )}
@@ -728,8 +730,9 @@ export default function Landing() {
         aria-label={mentorOpen ? "Close Crystal Mentor" : "Open Crystal Mentor"}
         onClick={() => setMentorOpen((open) => !open)}
       >
-        {mentorOpen ? <span>✕</span> : <img src={logo} alt="" />}
+        {mentorOpen ? <span>✕</span> : <img src={mentorBot} alt="" />}
       </button>
     </div>
   );
 }
+

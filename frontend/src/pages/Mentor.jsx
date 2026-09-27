@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
-import crystal from "../assets/brand/crystal-hero-hex.png";
+import mentorBot from "../assets/brand/mentor-bot.PNG";
 import brain from "../assets/brand/mentor-brain.png";
 import {
   isBadMentorLine,
@@ -312,7 +312,7 @@ export default function Mentor() {
       <Navbar user={user} />
       <section className="mn-page">
         <div className="mn-hero">
-          <img src={crystal} alt="" />
+          <img src={mentorBot} alt="" />
           <div>
             <h1>Crystal Mentor</h1>
             <p>{greeting}</p>

@@ -177,3 +177,108 @@
   .lp-fab { bottom: 12px; width: 56px; height: 56px; }
   .lp-fab-panel { bottom: 80px; }
 }
+
+.lp-fab-bubble.mentor {
+  white-space: normal;
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+.lp-fab-bubble.mentor p {
+  margin: 0 0 8px;
+  text-align: justify;
+}
+
+.lp-fab-bubble.mentor p:last-child {
+  margin-bottom: 0;
+}
+
+.lp-fab-bubble.mentor strong {
+  color: #fff;
+  font-weight: 700;
+}
+
+.lp-fab-bubble.mentor ul {
+  margin: 0 0 8px;
+  padding-left: 16px;
+  text-align: left;
+}
+
+.lp-fab-bubble.mentor li {
+  margin: 0 0 4px;
+  text-align: left;
+}
+
+.lp-fab-bubble.mentor .mn-cite {
+  display: block;
+  margin-top: 8px;
+  color: #8b97ad;
+  font-size: 12px;
+  font-style: italic;
+  text-align: left;
+}
+
+.lp-fab-brain {
+  position: relative;
+  width: 168px;
+  height: 168px;
+  margin: 4px auto 2px;
+  perspective: 520px;
+}
+
+.lp-fab-brain-spin {
+  position: absolute;
+  inset: 22px;
+  transform-style: preserve-3d;
+  animation: lp-fab-yaw 7.5s linear infinite;
+}
+
+.lp-fab-brain-spin img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 14px #3b7aee) drop-shadow(0 0 10px #e03a28);
+}
+
+.lp-fab-particle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  color: #9ec0ff;
+  animation: lp-fab-in 3.4s ease-in-out infinite;
+}
+
+.lp-fab-particle.p1 { --x: -62px; --y: -48px; animation-delay: 0s; color: #f7931a; }
+.lp-fab-particle.p2 { --x: 58px; --y: -42px; animation-delay: 0.45s; color: #627eea; }
+.lp-fab-particle.p3 { --x: -70px; --y: 18px; animation-delay: 0.9s; color: #3b7aee; }
+.lp-fab-particle.p4 { --x: 68px; --y: 22px; animation-delay: 1.35s; color: #e03a28; }
+.lp-fab-particle.p5 { --x: -20px; --y: 62px; animation-delay: 1.8s; color: #9ec0ff; }
+.lp-fab-particle.p6 { --x: 18px; --y: -70px; animation-delay: 2.25s; color: #ffd36a; }
+
+.lp-fab-particle svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+@keyframes lp-fab-yaw {
+  from { transform: rotateY(-22deg); }
+  50% { transform: rotateY(22deg); }
+  to { transform: rotateY(-22deg); }
+}
+
+@keyframes lp-fab-in {
+  0% { opacity: 0; transform: translate(var(--x), var(--y)) scale(0.35); }
+  55% { opacity: 1; transform: translate(0, 0) scale(1); }
+  100% { opacity: 0; transform: translate(0, 8px) scale(0.2); }
+}
+
+.lp-fab img,
+.lp-fab-head img {
+  object-fit: cover;
+  border-radius: 50%;
+  background: #05070d;
+}

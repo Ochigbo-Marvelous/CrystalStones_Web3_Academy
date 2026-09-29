@@ -1811,3 +1811,9 @@ html {
 .lp-ranks {
   margin-top: 0 !important;
 }
+
+.lp-foot-grid small.is-red,
+.lp-foot-end b {
+  color: #ff4d3a;
+}
+

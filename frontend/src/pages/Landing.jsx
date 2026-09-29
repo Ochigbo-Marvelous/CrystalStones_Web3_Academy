@@ -359,6 +359,7 @@ export default function Landing() {
           </div>
         </header>
 
+        <main>
         <section className="lp-hero" id="ecosystem">
           <div className="lp-hero-copy">
             <h1>
@@ -420,6 +421,7 @@ export default function Landing() {
           <CapIcon />
           <p><b>{active.label}.</b> {active.copy}</p>
         </div>
+        </main>
       </div>
 
       <section
@@ -437,29 +439,31 @@ export default function Landing() {
             <img src={astronaut} alt="" />
           </div>
 
-          <ol className="lp-growth-steps">
-            {GROWTH.map((item, i) => (
-              <li key={item.n} className={i === growthStep ? "is-on" : ""}>
-                <span className="lp-growth-dot" />
-                <div>
-                  <small>{item.n}</small>
-                  <strong>{item.title}</strong>
-                  <p>{item.copy}</p>
-                  {i === growthStep ? (
-                    <div className="lp-growth-chips">
-                      {item.chips.map((chip) => (
-                        <span key={chip}>{chip}</span>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-                <span className="lp-hexmark">
-                  <img src={item.icon} alt="" />
-                </span>
-              </li>
-            ))}
+          <div>
+            <ol className="lp-growth-steps">
+              {GROWTH.map((item, i) => (
+                <li key={item.n} className={i === growthStep ? "is-on" : ""}>
+                  <span className="lp-growth-dot" />
+                  <div>
+                    <small>{item.n}</small>
+                    <strong>{item.title}</strong>
+                    <p>{item.copy}</p>
+                    {i === growthStep ? (
+                      <div className="lp-growth-chips">
+                        {item.chips.map((chip) => (
+                          <span key={chip}>{chip}</span>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                  <span className="lp-hexmark">
+                    <img src={item.icon} alt="" />
+                  </span>
+                </li>
+              ))}
+            </ol>
             <p className="lp-growth-foot">A learning path.</p>
-          </ol>
+          </div>
         </div>
       </section>
 
@@ -735,4 +739,3 @@ export default function Landing() {
     </div>
   );
 }
-
